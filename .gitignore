@@ -46,6 +46,9 @@ gradle-app.setting
 !gradle-wrapper.properties
 build/
 
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 # ─────────────────────────────────────────────
 # VS Code
 # ─────────────────────────────────────────────
@@ -82,3 +85,13 @@ Thumbs.db
 *.swo
 *.bak
 *.tmp
+
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache

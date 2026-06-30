@@ -21,8 +21,18 @@ function Show-Help {
     Write-Host ""
 }
 
+function Check-Java-Version {
+    $javaVersion = & java -version 2>&1 | Select-String "version" | ForEach-Object { $_ -match '"(\d+)' | Out-Null; $matches[1] }
+    if ([int]$javaVersion -lt 21) {
+        Write-Host "Java 21 or higher is required. Current version: $javaVersion" -ForegroundColor Red
+        Write-Host "Download in: https://adoptium.net" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
 switch ($Command) {
     "up" {
+        Check-Java-Version
         Write-Host "Starting services..." -ForegroundColor Green
         docker compose up -d
     }
@@ -52,5 +62,6 @@ switch ($Command) {
     }
     default {
         Show-Help
+        Check-Java-Version
     }
 }

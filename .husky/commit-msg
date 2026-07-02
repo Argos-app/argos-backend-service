@@ -1,1 +1,3 @@
+./mvnw pmd:check
+./mvnw spotless:apply
 npx --no -- commitlint --edit $1

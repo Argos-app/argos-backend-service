@@ -3,7 +3,7 @@
 
 param (
     [Parameter(Position = 0)]
-    [ValidateSet("up", "down", "restart", "logs", "ps", "clean", "help")]
+    [ValidateSet("up", "down", "restart", "logs", "ps", "clean", "help", "run", "test", "format", "lint")]
     [string]$Command = "help"
 )
 
@@ -18,6 +18,10 @@ function Show-Help {
     Write-Host "  logs     Stream logs from all services (Ctrl+C to exit)"
     Write-Host "  ps       Show status of all containers"
     Write-Host "  clean    Stop and remove containers, volumes and networks"
+    Write-Host "  run      Run the spring boot application"
+    Write-Host "  test     Run all tests"
+    Write-Host "  format   Format code"
+    Write-Host "  lint     Scan code to find bad praticies"
     Write-Host ""
 }
 
@@ -59,6 +63,26 @@ switch ($Command) {
         } else {
             Write-Host "Aborted." -ForegroundColor Gray
         }
+    }
+    "run" {
+        Check-Java-Version
+        Write-Host "Run application..." -ForegroundColor Green  
+	    ./mvnw spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.useTestClasspath=false
+    }
+    "test" {
+        Check-Java-Version
+        Write-Host "Run tests..." -ForegroundColor Green 
+        ./mvnw -B test -Dspring.profiles.active=test 
+    }
+    "format" {
+        Check-Java-Version
+        Write-Host "Format code..." -ForegroundColor Green
+        ./mvnw spotless:apply
+    }
+    "lint" {
+        Check-Java-Version
+        Write-Host "Scan code to find bad praticies.." -ForegroundColor Green
+        ./mvnw pmd:check
     }
     default {
         Show-Help

@@ -55,3 +55,9 @@ format: check-java
 ## Scan code to find bad praticies
 lint: check-java
 	./mvnw pmd:check
+
+## Deploy to Discloud
+deploy:
+	./scripts/discloud-deploy.sh
+
+.PHONY: up down restart logs ps clean run test format lint deploy check-java

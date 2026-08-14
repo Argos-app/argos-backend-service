@@ -56,8 +56,12 @@ format: check-java
 lint: check-java
 	./mvnw pmd:check
 
-## Deploy to Discloud
+## Deploy to Discloud (production)
 deploy:
-	./scripts/discloud-deploy.sh
+	./scripts/discloud-deploy.sh prod
 
-.PHONY: up down restart logs ps clean run test format lint deploy check-java
+## Deploy to Discloud (homologation/staging)
+deploy-homolog:
+	./scripts/discloud-deploy.sh homolog
+
+.PHONY: up down restart logs ps clean run test format lint deploy deploy-homolog check-java

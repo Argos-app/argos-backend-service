@@ -44,24 +44,34 @@ Este projeto está configurado para deploy na [Discloud](https://discloud.com) c
 ### Deploy
 
 ```bash
-make deploy
+make deploy            # production (argos-backend.discloud.app)
+make deploy-homolog    # homologation (argos-backend-hmg.discloud.app)
 ```
 
-O alvo `deploy` executa `scripts/discloud-deploy.sh`, que builda o projeto (`./mvnw clean package`), gera o `app.jar` na raiz, publica via `discloud up` e limpa o jar temporário.
+Os alvos de deploy executam `scripts/discloud-deploy.sh`, que builda o projeto (`./mvnw clean package`), gera o `app.jar` na raiz e publica na Discloud:
+
+- `discloud app commit <id>` quando a aplicação já existe;
+- `discloud app up` como fallback na primeira subida (cria a aplicação).
 
 ### Configuração
+O arquivo [`discloud.config`](./discloud.config) define a aplicação na Discloud (produção) e [`discloud.config.homolog`](./discloud.config.homolog) define a de homologação. Cada ambiente possui seu próprio subdomínio e suas próprias variáveis de ambiente:
 
-O arquivo [`discloud.config`](./discloud.config) define a aplicação na Discloud:
+| Ambiente | Subdomínio | Config | Comando |
+| --- | --- | --- | --- |
+| Produção | `argos-backend.discloud.app` | `discloud.config` | `make deploy` |
+| Homologação | `argos-backend-hmg.discloud.app` | `discloud.config.homolog` | `make deploy-homolog` |
 
-| Chave | Valor | Descrição |
-| --- | --- | --- |
-| `NAME` | `argos-backend-service` | Nome da aplicação |
-| `TYPE` | `site` | Aplicação web/API |
-| `ID` | `argos-backend` | Subdomínio registrado |
-| `MAIN` | `app.jar` | Arquivo JAR principal (gerado com `finalName=app` no `pom.xml`) |
-| `START` | `java -Dspring.profiles.active=prod -jar app.jar` | Comando de inicialização (perfil `prod`) |
-| `RAM` | `1024` | Memória alocada em MB |
-| `VERSION` | `latest` | Versão do runtime Java |
+Ambos os ambientes usam o perfil Spring `prod`, portanto os dois leem as mesmas variáveis (`DATASOURCE_URL`, `DATASOURCE_USER`, `DATASOURCE_PASSWORD`, `MONGODB_URI`) — **defina valores diferentes para cada aplicação** no painel da Discloud (Dashboard → aplicação → Environment), apontando para bancos separados.
+
+| Chave | Descrição |
+| --- | --- |
+| `NAME` | Nome da aplicação |
+| `TYPE` | `site` (aplicação web/API) |
+| `ID` | Subdomínio registrado |
+| `MAIN` | Arquivo JAR principal (gerado com `finalName=app` no `pom.xml`) |
+| `START` | `java -Dspring.profiles.active=prod -jar app.jar` |
+| `RAM` | Memória alocada em MB |
+| `VERSION` | Versão do runtime Java |
 
 A aplicação escuta em `0.0.0.0:8080` (exigido pela Discloud para sites) conforme o [`application-prod.properties`](./src/main/resources/application-prod.properties).
 

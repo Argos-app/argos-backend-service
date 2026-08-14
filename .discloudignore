@@ -34,3 +34,9 @@ target/
 .env.*
 docker/
 docs/
+
+# ─────────────────────────────────────────────
+# Discloud per-environment configs (swapped in
+# at deploy time by scripts/discloud-deploy.sh)
+# ─────────────────────────────────────────────
+discloud.config.*

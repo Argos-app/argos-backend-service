@@ -3,7 +3,7 @@
 
 param (
     [Parameter(Position = 0)]
-    [ValidateSet("up", "down", "restart", "logs", "ps", "clean", "help", "run", "test", "format", "lint")]
+    [ValidateSet("up", "down", "restart", "logs", "ps", "clean", "help", "run", "test", "format", "lint", "deploy", "deploy-homolog")]
     [string]$Command = "help"
 )
 

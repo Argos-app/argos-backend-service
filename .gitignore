@@ -26,6 +26,9 @@ pnpm-debug.log*
 .env.*
 !.env.example
 
+# Discloud staged jar (produced by scripts/discloud-deploy.sh)
+app.jar
+
 coverage/
 .nyc_output/
 

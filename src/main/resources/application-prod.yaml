@@ -1,5 +1,8 @@
 server:
-  servlet: context-path=/api/v1
+   servlet:
+    context-path: /api/v1
+   port: ${PORT:8080}
+   address: 0.0.0.0
 
 spring:
   datasource:
@@ -7,16 +10,21 @@ spring:
     username: ${DATASOURCE_USER}
     password: ${DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate
+    show-sql: false
+
 
   mongodb:
     uri: ${MONGODB_URI}
 
+
 logging:
   level:
-    root: INFO
+    root: WARN
     com:
-      argos: DEBUG
+      argos: INFO
+
+

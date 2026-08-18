@@ -96,6 +96,10 @@ O ambiente local roda PostgreSQL, Redis e MongoDB via Docker Compose.
 | `.\scripts\dev.ps1 logs` | Exibe logs em tempo real |
 | `.\scripts\dev.ps1 ps` | Lista o status dos containers |
 | `.\scripts\dev.ps1 clean` | Remove containers e volumes (reset completo) |
+| `.\scripts\dev.ps1 run` | Inicializa a aplicação Spring Boot |
+| `.\scripts\dev.ps1 test` | Roda todos os testes da aplicação |
+| `.\scripts\dev.ps1 format` | Formata automaticamente o código (Spotless) |
+| `.\scripts\dev.ps1 lint` | Análise estática de código (PMD) |
 
 > **Atenção:** `clean` apaga todos os dados locais. Use com cuidado.
 
@@ -103,6 +107,12 @@ Se o Windows bloquear a execução do script, rode uma vez no PowerShell como ad
 
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+> **Observação:** Se você estiver utilizando uma distribuição **Linux**, utilize o script Makefile. Por exemplo:
+
+```Makefile
+make run
 ```
 
 ---

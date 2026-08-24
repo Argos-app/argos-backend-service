@@ -48,14 +48,7 @@ make deploy            # production (argos-backend.discloud.app)
 make deploy-homolog    # homologation (argos-backend-hmg.discloud.app)
 ```
 
-No Windows (PowerShell):
-
-```powershell
-.\scripts\dev.ps1 deploy            # production (argos-backend.discloud.app)
-.\scripts\dev.ps1 deploy-homolog    # homologation (argos-backend-hmg.discloud.app)
-```
-
-Os alvos de deploy executam `scripts/discloud-deploy.sh` (Linux/macOS) ou `scripts/discloud-deploy.ps1` (Windows), que buildam o projeto (`./mvnw clean package`), geram o `app.jar` na raiz e publicam na Discloud:
+Os alvos de deploy executam `scripts/discloud-deploy.sh`, que builda o projeto (`./mvnw clean package`), gera o `app.jar` na raiz e publica na Discloud:
 
 - `discloud app commit <id>` quando a aplicação já existe;
 - `discloud app up` como fallback na primeira subida (cria a aplicação).
@@ -63,10 +56,10 @@ Os alvos de deploy executam `scripts/discloud-deploy.sh` (Linux/macOS) ou `scrip
 ### Configuração
 O arquivo [`discloud.config`](./discloud.config) define a aplicação na Discloud (produção) e [`discloud.config.homolog`](./discloud.config.homolog) define a de homologação. Cada ambiente possui seu próprio subdomínio e suas próprias variáveis de ambiente:
 
-| Ambiente | Subdomínio | Config | Comando (Linux/macOS) | Comando (Windows) |
-| --- | --- | --- | --- | --- |
-| Produção | `argos-backend.discloud.app` | `discloud.config` | `make deploy` | `.\scripts\dev.ps1 deploy` |
-| Homologação | `argos-backend-hmg.discloud.app` | `discloud.config.homolog` | `make deploy-homolog` | `.\scripts\dev.ps1 deploy-homolog` |
+| Ambiente | Subdomínio | Config | Comando |
+| --- | --- | --- | --- |
+| Produção | `argos-backend.discloud.app` | `discloud.config` | `make deploy` |
+| Homologação | `argos-backend-hmg.discloud.app` | `discloud.config.homolog` | `make deploy-homolog` |
 
 Ambos os ambientes usam o perfil Spring `prod`, portanto os dois leem as mesmas variáveis (`DATASOURCE_URL`, `DATASOURCE_USER`, `DATASOURCE_PASSWORD`, `MONGODB_URI`) — **defina valores diferentes para cada aplicação** no painel da Discloud (Dashboard → aplicação → Environment), apontando para bancos separados.
 

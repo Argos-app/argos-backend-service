@@ -3,7 +3,7 @@
 
 param (
     [Parameter(Position = 0)]
-    [ValidateSet("up", "down", "restart", "logs", "ps", "clean", "help", "run", "test", "format", "lint", "deploy", "deploy-homolog")]
+    [ValidateSet("up", "down", "restart", "logs", "ps", "clean", "help", "run", "test", "format", "lint")]
     [string]$Command = "help"
 )
 
@@ -22,8 +22,6 @@ function Show-Help {
     Write-Host "  test     Run all tests"
     Write-Host "  format   Format code"
     Write-Host "  lint     Scan code to find bad praticies"
-    Write-Host "  deploy   Deploy to Discloud (production)"
-    Write-Host "  deploy-homolog   Deploy to Discloud (homologation/staging)"
     Write-Host ""
 }
 
@@ -85,16 +83,6 @@ switch ($Command) {
         Check-Java-Version
         Write-Host "Scan code to find bad praticies.." -ForegroundColor Green
         ./mvnw pmd:check
-    }
-    "deploy" {
-        Check-Java-Version
-        Write-Host "Deploy to Discloud (production)..." -ForegroundColor Green
-        & (Join-Path $PSScriptRoot "discloud-deploy.ps1") prod
-    }
-    "deploy-homolog" {
-        Check-Java-Version
-        Write-Host "Deploy to Discloud (homologation/staging)..." -ForegroundColor Green
-        & (Join-Path $PSScriptRoot "discloud-deploy.ps1") homolog
     }
     default {
         Show-Help

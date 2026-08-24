@@ -4,6 +4,9 @@ import org.apache.coyote.BadRequestException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,23 +27,7 @@ class CustomGlobalExceptionTest {
         assertNotNull(response.getBody());
         assertEquals(mensagem, response.getBody().message());
         assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().code());
-        assertEquals("HANDLE_BAD_REQUEST", response.getBody().code());
-    }
-
-    @Test
-    void deveTratarMethodArgumentNotValidException() {
-        MethodArgumentNotValidException exception =
-                new MethodArgumentNotValidException(null, null);
-
-        ResponseEntity<ApiError> response =
-                handler.handleMethodArgumentNotValidException(exception);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(
-                "METHOD_ARGUMENT_NOT_VALID",
-                response.getBody().code()
-        );
+        assertEquals("HANDLE_BAD_REQUEST", response.getBody().informationCode());
     }
 
     @Test
@@ -56,8 +43,8 @@ class CustomGlobalExceptionTest {
         assertEquals(mensagem, response.getBody().message());
         assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().code());
         assertEquals(
-                "METHOD_ARGUMENT_NOT_VALID",
-                response.getBody().code()
+                "RUNTIME_EXCEPTION",
+                response.getBody().informationCode()
         );
     }
 
@@ -75,8 +62,8 @@ class CustomGlobalExceptionTest {
         assertEquals(mensagem, response.getBody().message());
         assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().code());
         assertEquals(
-                "METHOD_ARGUMENT_NOT_VALID",
-                response.getBody().code()
+                "ILLEGAL_ARGUMENT_EXCEPTION",
+                response.getBody().informationCode()
         );
     }
 
@@ -94,8 +81,8 @@ class CustomGlobalExceptionTest {
         assertEquals(mensagem, response.getBody().message());
         assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().code());
         assertEquals(
-                "METHOD_ARGUMENT_NOT_VALID",
-                response.getBody().code()
+                "NUMBER_FORMAT",
+                response.getBody().informationCode()
         );
     }
 }

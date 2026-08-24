@@ -24,19 +24,19 @@ public class CustomGlobalException {
 
     @ExceptionHandler(RuntimeException.class)
     ResponseEntity<ApiError> handleRuntimeException(RuntimeException ex) {
-        var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "METHOD_ARGUMENT_NOT_VALID");
+        var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "RUNTIME_EXCEPTION");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     ResponseEntity<ApiError> handleIllegalArgumentException(IllegalArgumentException ex) {
-        var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "METHOD_ARGUMENT_NOT_VALID");
+        var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "ILLEGAL_ARGUMENT_EXCEPTION");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(NumberFormatException.class)
     ResponseEntity<ApiError> handleNumberFormatException(NumberFormatException ex) {
-        var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "METHOD_ARGUMENT_NOT_VALID");
+        var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "NUMBER_FORMAT");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 }

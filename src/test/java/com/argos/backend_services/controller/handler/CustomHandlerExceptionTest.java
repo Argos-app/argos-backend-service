@@ -23,7 +23,7 @@ class CustomGlobalExceptionTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(mensagem, response.getBody().message());
-        assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().status());
+        assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().code());
         assertEquals("HANDLE_BAD_REQUEST", response.getBody().code());
     }
 
@@ -54,7 +54,7 @@ class CustomGlobalExceptionTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(mensagem, response.getBody().message());
-        assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().status());
+        assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().code());
         assertEquals(
                 "METHOD_ARGUMENT_NOT_VALID",
                 response.getBody().code()
@@ -73,7 +73,7 @@ class CustomGlobalExceptionTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(mensagem, response.getBody().message());
-        assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().status());
+        assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().code());
         assertEquals(
                 "METHOD_ARGUMENT_NOT_VALID",
                 response.getBody().code()
@@ -92,7 +92,7 @@ class CustomGlobalExceptionTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(mensagem, response.getBody().message());
-        assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().status());
+        assertEquals(HttpStatus.BAD_REQUEST.toString(), response.getBody().code());
         assertEquals(
                 "METHOD_ARGUMENT_NOT_VALID",
                 response.getBody().code()

@@ -42,7 +42,7 @@ clean:
 
 ## Run application
 run: check-java
-	./mvnw spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.useTestClasspath=false
+	./mvnw spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.useTestClasspath=false
 
 ## Run tests
 test: check-java

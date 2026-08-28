@@ -100,3 +100,4 @@ Thumbs.db
 .sts4-cache
 
 application-local.properties
+**/firebase-service-account.json

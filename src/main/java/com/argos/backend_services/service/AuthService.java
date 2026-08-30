@@ -64,6 +64,6 @@ public class AuthService {
 
         String bearerToken = jwtService.generate(appUser);
 
-        return new UserSignInResponseOut(bearerToken, appUser.getName(), farmName, isFirstAccess);
+        return new UserSignInResponseOut(bearerToken, appUser.getName(), appUser.getEmail(), farmName, isFirstAccess);
     }
 }

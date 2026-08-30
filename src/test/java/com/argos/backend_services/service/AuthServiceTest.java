@@ -72,7 +72,8 @@ class AuthServiceTest {
             UserSignInResponseOut response = authService.signIn(firebaseIdToken);
 
             assertEquals("Argos User", response.userName());
-            assertNull(null, response.farmName());
+            assertEquals(email, response.email());
+            assertNull(response.farmName());
             assertTrue(response.isFirstAccess());
             assertFalse(user.getCredential().getFirstLogin());
             assertEquals(userId, jwtService.extractUserId(response.bearerToken()));

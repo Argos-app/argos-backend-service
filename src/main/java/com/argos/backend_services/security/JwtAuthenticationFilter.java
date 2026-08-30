@@ -1,6 +1,7 @@
 package com.argos.backend_services.security;
 
 import com.argos.backend_services.service.JwtService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -48,15 +50,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String userId = jwtService.extractUserId(token).toString();
-        String permission = jwtService.extractClaim(token, "permission");
+        Claims claims = jwtService.extractClaims(token);
+        String permission = claims.get("permission", String.class);
+        String propertyId = claims.get("propertyId", String.class);
+        CurrentUserData currentUser = new CurrentUserData(
+                UUID.fromString(claims.getSubject()),
+                claims.get("email", String.class),
+                claims.get("name", String.class),
+                permission,
+                propertyId == null ? null : UUID.fromString(propertyId)
+        );
 
         List<SimpleGrantedAuthority> authorities = permission != null
                 ? List.of(new SimpleGrantedAuthority(permission))
                 : List.of();
 
         UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(userId, null, authorities);
+                new UsernamePasswordAuthenticationToken(currentUser, null, authorities);
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);

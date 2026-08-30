@@ -1,5 +1,6 @@
 package com.argos.backend_services.config;
 
+import com.argos.backend_services.controller.resolver.CurrentUserArgumentResolver;
 import com.argos.backend_services.controller.resolver.FirebaseTokenArgumentResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -11,10 +12,12 @@ import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
+    private final CurrentUserArgumentResolver currentUserArgumentResolver;
     private final FirebaseTokenArgumentResolver firebaseTokenArgumentResolver;
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+        resolvers.add(currentUserArgumentResolver);
         resolvers.add(firebaseTokenArgumentResolver);
     }
 }

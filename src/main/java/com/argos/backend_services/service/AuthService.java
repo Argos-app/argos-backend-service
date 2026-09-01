@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -65,5 +66,17 @@ public class AuthService {
         String bearerToken = jwtService.generate(appUser);
 
         return new UserSignInResponseOut(bearerToken, appUser.getName(), appUser.getEmail(), farmName, isFirstAccess);
+    }
+
+    public void updateFirstAccess(UUID uuid) {
+        Optional<AppUser> userOptional = userRepository.findById(uuid);
+        if (userOptional.isEmpty()) {
+            throw new NotFoundException("Usuário não encontrado");
+        }
+
+        AppUser user = userOptional.get();
+        user.getCredential().setFirstLogin(false);
+
+        userRepository.save(user);
     }
 }

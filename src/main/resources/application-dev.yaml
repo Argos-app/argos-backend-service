@@ -4,20 +4,30 @@ server:
 
 spring:
   datasource:
-    url: ${DATASOURCE_URL}
-    username: ${DATASOURCE_USER}
-    password: ${DATASOURCE_PASSWORD}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:app_db}
+    username: ${DATASOURCE_USER:app_user}
+    password: ${DATASOURCE_PASSWORD:postgresArgos01!}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
+  flyway:
+    baseline-on-migrate: false
 
   mongodb:
-    uri: ${MONGODB_URI}
+    uri: mongodb://localhost:${MONGO_PORT:27017}/${MONGO_DB:app_db}
 
 logging:
   level:
     root: INFO
     com:
       argos: DEBUG
+
+firebase:
+  service-account-path: classpath:firebase-service-account.json
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:local-secret-minimo-32-caracteres-para-hs256}
+    expiration-ms: 86400000

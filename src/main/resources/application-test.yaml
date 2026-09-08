@@ -1,16 +1,18 @@
 spring:
-  flyway:
-    enabled: false
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:argos_test
     username: sa
     password:
-
+    driver-class-name: org.h2.Driver
   jpa:
     hibernate:
       ddl-auto: create-drop
-    database-platform:  org.hibernate.dialect.H2Dialect
-
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/argos_test
+  flyway:
+    enabled: false
+security:
+  jwt:
+    secret: test-secret-minimo-32-caracteres-para-hs256
+    expiration-ms: 86400000

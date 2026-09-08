@@ -69,7 +69,7 @@ switch ($Command) {
     "run" {
         Check-Java-Version
         Write-Host "Run application..." -ForegroundColor Green  
-	    ./mvnw spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.useTestClasspath=false
+	    ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.useTestClasspath=false
     }
     "test" {
         Check-Java-Version

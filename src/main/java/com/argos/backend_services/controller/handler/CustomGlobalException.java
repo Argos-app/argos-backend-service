@@ -1,6 +1,8 @@
 package com.argos.backend_services.controller.handler;
 
-import org.apache.coyote.BadRequestException;
+import com.argos.backend_services.exception.BadRequestException;
+import com.argos.backend_services.exception.NotFoundException;
+import com.argos.backend_services.exception.UnauthorizedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -9,11 +11,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class CustomGlobalException {
-
     @ExceptionHandler(BadRequestException.class)
     ResponseEntity<ApiError> handleBadRequestException(BadRequestException ex) {
-        var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "HANDLE_BAD_REQUEST");
+        var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "BAD_REQUEST");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    ResponseEntity<ApiError> handleNotFoundException(NotFoundException ex) {
+        var error = new ApiError(ex.getMessage(), HttpStatus.NOT_FOUND.toString(), "NOT_FOUND");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -38,5 +45,11 @@ public class CustomGlobalException {
     ResponseEntity<ApiError> handleNumberFormatException(NumberFormatException ex) {
         var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "NUMBER_FORMAT");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    ResponseEntity<ApiError> handleUnauthorizedException(UnauthorizedException ex) {
+        var error = new ApiError(ex.getMessage(), HttpStatus.UNAUTHORIZED.toString(), "UNAUTHORIZED");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 }

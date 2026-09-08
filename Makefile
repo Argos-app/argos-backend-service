@@ -3,7 +3,7 @@
 
 JAVA_VERSION = $(shell java -version 2>&1 | head -n 1 | cut -d'"' -f2 | cut -d'.' -f1)
 
-.PHONY: up down restart logs ps clean run test format
+.PHONY: up down restart logs ps clean run test format lint deploy deploy-homolog
 
 check-java:
 	@if [ -z "$(JAVA_VERSION)" ]; then \
@@ -42,7 +42,7 @@ clean:
 
 ## Run application
 run: check-java
-	./mvnw spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.useTestClasspath=false
+	./mvnw spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.useTestClasspath=false
 
 ## Run tests
 test: check-java

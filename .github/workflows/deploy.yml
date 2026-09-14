@@ -15,7 +15,6 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,7 +24,14 @@ jobs:
         with:
           java-version: "21"
           distribution: "temurin"
-          cache: maven
+
+      - name: Cache maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven
 
       - name: Build and run tests
         run: >
@@ -49,15 +55,7 @@ jobs:
         if: github.ref_name == 'develop'
         run: cp discloud.config.homolog discloud.config
 
-      - name: Check deploy files
-        run: |
-          ls -lh app.jar
-          ls -lh discloud.config
-
       - name: Deploy to Discloud
         uses: discloud/deploy-action@v1
         with:
           token: ${{ secrets.DISCLOUD_TOKEN }}
-          glob: |
-            app.jar
-            discloud.config

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -34,7 +33,7 @@ public class Application {
     private AppUser userId;
 
     @Column
-    private LocalDate applicationDate;
+    private LocalDateTime applicationDate;
 
     @Column
     private LocalDateTime applicationTime;
@@ -52,7 +51,7 @@ public class Application {
     private Integer headCountApplied;
 
     @Column
-    private LocalDate meatWithdrawalEnd;
+    private LocalDateTime meatWithdrawalEnd;
 
     @Column(length = 120)
     private String goal;

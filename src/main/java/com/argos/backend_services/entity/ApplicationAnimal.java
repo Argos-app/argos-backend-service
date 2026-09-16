@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -35,7 +36,7 @@ public class ApplicationAnimal {
     private BigDecimal weight_at_time;
 
     @Column(name = "meat_withdrawal_end")
-    private LocalDateTime meatWithdrawalDate;
+    private LocalDate meatWithdrawalDate;
 
     @Column(name = "released_for_slaughter", nullable = false)
     private boolean releasedForSlaughter = false;

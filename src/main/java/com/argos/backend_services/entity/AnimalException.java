@@ -36,30 +36,31 @@ public class AnimalException {
     private String category;
 
     @Column(name = "birth_date")
-    private LocalDateTime birthDate;
+    private LocalDate birthDate;
 
     @Column(name = "current_weight")
     private BigDecimal currentWeight;
 
     @Column(name = "exception_date", nullable = false)
-    private LocalDateTime exceptionDate;
+    private LocalDate exceptionDate;
 
     @Column(name = "exception_reason", nullable = false, length = 255)
     private String exceptionReason;
 
     @Column(name = "slaughter_release_date")
-    private LocalDateTime slaughterReleaseDate;
+    private LocalDate slaughterReleaseDate;
 
     @Column(name = "fit_for_slaughter", nullable = false)
     private boolean fitForSlaughter = true;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusAnimal status = StatusAnimal.ATIVO;
 
     @Column(name = "source_id")
     private Integer sourceId;
 
-    @Column(name = "updated_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
@@ -67,7 +68,7 @@ public class AnimalException {
 
     @PrePersist
     protected void onCreate() {
-        exceptionDate = LocalDateTime.now();
+        exceptionDate = LocalDate.now();
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }

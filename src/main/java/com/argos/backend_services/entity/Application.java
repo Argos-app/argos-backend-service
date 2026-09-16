@@ -4,7 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
@@ -33,10 +36,10 @@ public class Application {
     private AppUser userId;
 
     @Column
-    private LocalDateTime applicationDate;
+    private LocalDate applicationDate;
 
-    @Column
-    private LocalDateTime applicationTime;
+    @Column(name = "application_time")
+    private LocalTime applicationTime;
 
     @Column
     private BigDecimal dose;
@@ -51,7 +54,7 @@ public class Application {
     private Integer headCountApplied;
 
     @Column
-    private LocalDateTime meatWithdrawalEnd;
+    private LocalDate meatWithdrawalEnd;
 
     @Column(length = 120)
     private String goal;

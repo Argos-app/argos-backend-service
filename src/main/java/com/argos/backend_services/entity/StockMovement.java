@@ -33,7 +33,7 @@ public class StockMovement {
     private AppUser userId;
 
     @Column(nullable = false, length = 1)
-    private String type;
+    private Character type;
 
     @Column(nullable = false)
     private BigDecimal quantity;

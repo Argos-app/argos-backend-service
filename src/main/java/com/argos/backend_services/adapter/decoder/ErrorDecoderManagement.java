@@ -12,7 +12,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ErrorDecoderManagement implements ErrorDecoder {
 
-    private final List<ErrorDecoderIntegration> decoders;
+    private List<ErrorDecoderIntegration> decoders;
 
     @Override
     public Exception decode(final String methodKey, final Response response) {

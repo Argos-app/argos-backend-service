@@ -59,7 +59,7 @@ public class Medicine {
     private String route;
 
     @Column(name = "source_id")
-    private UUID sourceId;
+    private Integer sourceId;
 
     @Column(nullable = false)
     private boolean active;

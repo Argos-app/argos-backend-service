@@ -13,4 +13,8 @@ public class ArgosInternalServerException extends RuntimeException {
     HttpStatus code;
     String informationCode;
     String message;
+
+    public ArgosInternalServerException (HttpStatus code, String informationCode, String message) {
+        super(message);
+    }
 }

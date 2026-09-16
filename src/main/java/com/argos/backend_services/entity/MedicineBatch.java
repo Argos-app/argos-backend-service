@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -28,13 +29,13 @@ public class MedicineBatch {
     private String batchNumber;
 
     @Column(name = "manufacture_date", nullable = false)
-    private LocalDateTime manufactureDate;
+    private LocalDate manufactureDate;
 
     @Column(name = "expiry_date", nullable = false)
-    private LocalDateTime expiryDate;
+    private LocalDate expiryDate;
 
     @Column(name = "delivery_date", nullable = false)
-    private LocalDateTime deliveryDate;
+    private LocalDate deliveryDate;
 
     @Column(name = "initialQuantity", nullable = false)
     private BigDecimal initialQuatity;
@@ -43,10 +44,11 @@ public class MedicineBatch {
     private String storagePlace;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private Status status;
 
     @Column(name = "source_id")
-    private UUID sourceId;
+    private Integer sourceId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

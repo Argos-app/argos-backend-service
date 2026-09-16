@@ -23,7 +23,7 @@ public class Supplier {
     private String companyName;
 
     @Column(nullable = false, unique = true, length = 14)
-    private String cnpj;
+    private Character cnpj;
 
     @Column(length = 120)
     private String email;
@@ -32,10 +32,10 @@ public class Supplier {
     private String phone;
 
     @Column(length = 255)
-    private String adress;
+    private String address;
 
     @Column(name = "source_id")
-    private UUID sourceId;
+    private Integer sourceId;
 
     @Column(nullable = false)
     private boolean active = true;

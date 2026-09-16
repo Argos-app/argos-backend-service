@@ -25,7 +25,7 @@ public class StockMovement {
     private MedicineBatch medicineBatchId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "application_id", nullable = false)
+    @JoinColumn(name = "application_id")
     private Application applicationId;
 
     @ManyToOne(fetch = FetchType.LAZY)

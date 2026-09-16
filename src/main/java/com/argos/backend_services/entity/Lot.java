@@ -25,7 +25,7 @@ public class Lot {
     private Herd herdId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_lot_id", nullable = false)
+    @JoinColumn(name = "parent_lot_id")
     private Lot parentId;
 
     @Column(name = "lot_code", length = 20, nullable = false)

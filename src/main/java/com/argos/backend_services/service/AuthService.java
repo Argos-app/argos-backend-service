@@ -57,7 +57,7 @@ public class AuthService {
             userCredentialRepository.save(appUser.getCredential());
         }
 
-        String farmName = propertyRepository.findByUserIdAndActiveTrue(appUser.getId())
+        String farmName = propertyRepository.findByUserAndActiveTrue(appUser)
                 .stream()
                 .findFirst()
                 .map(Property::getName)

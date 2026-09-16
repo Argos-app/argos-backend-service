@@ -37,8 +37,8 @@ public class MedicineBatch {
     @Column(name = "delivery_date", nullable = false)
     private LocalDate deliveryDate;
 
-    @Column(name = "initialQuantity", nullable = false)
-    private BigDecimal initialQuatity;
+    @Column(name = "initial_quantity", nullable = false)
+    private BigDecimal initialQuantity;
 
     @Column(name = "storage_place", length = 60)
     private String storagePlace;

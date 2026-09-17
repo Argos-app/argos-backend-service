@@ -23,11 +23,6 @@ logging:
     root: INFO
     com:
       argos: DEBUG
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
 
 firebase:
   service-account-path: classpath:firebase-service-account.json
@@ -35,13 +30,11 @@ firebase:
 security:
   jwt:
     secret: ${JWT_SECRET:local-secret-minimo-32-caracteres-para-hs256}
-<<<<<<< Updated upstream
-    expiration-ms: 86400000
-=======
     expiration-ms: 86400000
 
 springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
   api-docs:
-    enabled: true 
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+    path: /v3/api-docs
+    enabled: true

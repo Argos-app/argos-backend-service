@@ -4,9 +4,9 @@ import com.argos.backend_services.entity.Medicine;
 import com.argos.backend_services.entity.MedicineBatch;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface MedicineBatchRepository extends JpaRepository<MedicineBatch, UUID> {
-    List<MedicineBatch> findByMedicineId(Medicine id);
+    Optional<MedicineBatch> findByMedicineId(Medicine id);
 }

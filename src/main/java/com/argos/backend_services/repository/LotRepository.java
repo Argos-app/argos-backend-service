@@ -9,4 +9,5 @@ import java.util.UUID;
 
 public interface LotRepository extends JpaRepository<Lot, UUID> {
     List<Lot> findByHerdId(Herd HerdId);
+    Lot findByLotCode(String lotCode);
 }

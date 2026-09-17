@@ -26,6 +26,13 @@ spring:
 logging:
   level:
     root: INFO
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+    com:
+      argos: DEBUG
+=======
+>>>>>>> Stashed changes
     com.argos: DEBUG
 
 firebase:
@@ -36,6 +43,10 @@ security:
     secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
+<<<<<<< Updated upstream
 springdoc:
   api-docs:
     enabled: false
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes

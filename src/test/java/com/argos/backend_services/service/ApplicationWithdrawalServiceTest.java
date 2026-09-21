@@ -33,7 +33,7 @@ class ApplicationWithdrawalServiceTest {
     }
 
     @Test
-    void shouldMapApplicationsInConfiguredDateWindow() {
+    void shouldMapApplicationsInConfiguredDateWindow() throws InvalidDateWindowException {
         var referenceDate = LocalDate.of(2026, 9, 20);
         var application = Application.builder().id(UUID.randomUUID()).build();
         var expected = ApplicationWithdrawalOut.builder().applicationId(application.getId()).build();
@@ -59,5 +59,15 @@ class ApplicationWithdrawalServiceTest {
 
         assertThatThrownBy(() -> service.findNearDate(LocalDate.now(), 7, 7))
                 .isInstanceOf(ApplicationWithdrawalRoutineException.class);
+    }
+
+    @Test
+    void shouldReturnEmptyWindowWhenThereAreNoApplications() throws InvalidDateWindowException {
+        var referenceDate = LocalDate.of(2026, 9, 20);
+        when(applicationRepository.findByMeatWithdrawalEndBetween(referenceDate.minusDays(7), referenceDate.plusDays(7)))
+                .thenReturn(List.of());
+
+        assertThat(service.findNearDate(referenceDate, 7, 7)).isEmpty();
+        verifyNoInteractions(mapper);
     }
 }

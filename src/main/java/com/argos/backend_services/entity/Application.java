@@ -53,7 +53,7 @@ public class Application {
     @Column
     private Integer headCountApplied;
 
-    @Column
+    @Column(name = "meat_withdrawal_end")
     private LocalDate meatWithdrawalEnd;
 
     @Column(length = 120)

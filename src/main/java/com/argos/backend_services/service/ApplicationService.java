@@ -7,6 +7,7 @@ import com.argos.backend_services.exception.MedicineNotFoundException;
 import com.argos.backend_services.mapper.ApplicationMapper;
 import com.argos.backend_services.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class ApplicationService {
     private final MedicineBatchRepository medicineBatchRepository;
     private final MedicineRepository medicineRepository;
     private final DatabaseRoutineRepository databaseRoutineRepository;
+    private final ApplicationAnimalRepository applicationAnimalRepository;
     private final ApplicationMapper mapper;
 
     public void registerApplication(ApplicationIn applicationIn, UUID userId) throws LotNotFoundException, MedicineNotFoundException {
@@ -45,6 +47,14 @@ public class ApplicationService {
     }
 
     public List<ApplicationOut> listApplication() {
-        return mapper.listToOut(applicationRepository.findAll());
+        var applications = applicationRepository.findAll();
+        var result = mapper.listToOut(applications);
+        if (applicationAnimalRepository != null) {
+            applications.forEach(application -> applicationAnimalRepository.findByApplicationId(application)
+                    .stream()
+                    .map(applicationAnimal -> mapper.toOut(applicationAnimal, application))
+                    .forEach(result::add));
+        }
+        return result;
     }
 }

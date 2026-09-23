@@ -5,6 +5,8 @@ import com.argos.backend_services.entity.AppUser;
 import com.argos.backend_services.entity.Application;
 import com.argos.backend_services.entity.ApplicationAnimal;
 import com.argos.backend_services.entity.Lot;
+import com.argos.backend_services.dto.out.AnimalApplicationOut;
+import com.argos.backend_services.dto.out.LotApplicationOut;
 import com.argos.backend_services.exception.ApplicationWithdrawalRoutineException;
 import com.argos.backend_services.mapper.HomeApplicationMapper;
 import com.argos.backend_services.repository.ApplicationAnimalRepository;

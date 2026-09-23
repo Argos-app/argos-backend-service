@@ -17,8 +17,8 @@ public interface HomeApplicationMapper {
     @Mapping(source = "application.meatWithdrawalEnd", target = "meatWithdrawalEnd")
     @Mapping(target = "daysFromReferenceDate", expression = "java(daysBetween(application.getMeatWithdrawalEnd(), referenceDate))")
     @Mapping(target = "daysUntilSlaughter", expression = "java(daysUntilSlaughter(application.getLotId().getSlaughterReleaseDate(), referenceDate, fitForSlaughter))")
-    @Mapping(source = "application.lotId.lotCode", target = "lotCode")
-    @Mapping(source = "application.headCountApplied", target = "headCount")
+    @Mapping(source = "lotId.lotCode", target = "lotCode")
+    @Mapping(source = "headCountApplied", target = "headCount")
     @Mapping(target = "status", expression = "java(status(application.getLotId().getSlaughterReleaseDate(), referenceDate, fitForSlaughter))")
     LotApplicationOut toLotApplicationOut(Application application, LocalDate referenceDate, boolean fitForSlaughter);
 

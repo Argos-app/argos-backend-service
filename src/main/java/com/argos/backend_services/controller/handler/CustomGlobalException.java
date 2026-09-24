@@ -1,6 +1,8 @@
 package com.argos.backend_services.controller.handler;
 
 import com.argos.backend_services.exception.BadRequestException;
+import com.argos.backend_services.exception.ArgosBadRequestException;
+import com.argos.backend_services.exception.ArgosInternalServerException;
 import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.exception.UnauthorizedException;
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,18 @@ public class CustomGlobalException {
     ResponseEntity<ApiError> handleBadRequestException(BadRequestException ex) {
         var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "BAD_REQUEST");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(ArgosBadRequestException.class)
+    ResponseEntity<ApiError> handleArgosBadRequestException(ArgosBadRequestException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "ARGOS_BAD_REQUEST"));
+    }
+
+    @ExceptionHandler(ArgosInternalServerException.class)
+    ResponseEntity<ApiError> handleArgosInternalServerException(ArgosInternalServerException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiError(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.toString(), "ARGOS_INTERNAL_SERVER_ERROR"));
     }
 
     @ExceptionHandler(NotFoundException.class)

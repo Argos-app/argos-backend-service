@@ -64,7 +64,7 @@ class HomeServiceTest {
         when(applicationRepository.findByUserId_IdAndMeatWithdrawalEndBetween(
                 userId, referenceDate.minusDays(7), referenceDate.plusDays(7)))
                 .thenReturn(List.of(application));
-        when(databaseRoutineRepository.loteAptoAbate(lotId, referenceDate)).thenReturn(false);
+        when(databaseRoutineRepository.lotIsReleaseForSlaughter(lotId, referenceDate)).thenReturn(false);
         when(mapper.toLotApplicationOut(application, referenceDate, false)).thenReturn(lotApplication);
         when(applicationAnimalRepository.findByApplicationId(application)).thenReturn(List.of(applicationAnimal));
         when(mapper.toAnimalApplicationOut(applicationAnimal, application, referenceDate)).thenReturn(animalApplication);
@@ -79,7 +79,7 @@ class HomeServiceTest {
             assertThat(homeApplication.getLotApplication()).containsExactly(lotApplication);
             assertThat(homeApplication.getAnimalApplication()).containsExactly(animalApplication);
         });
-        verify(databaseRoutineRepository).loteAptoAbate(lotId, referenceDate);
+        verify(databaseRoutineRepository).lotIsReleaseForSlaughter(lotId, referenceDate);
     }
 
     @Test

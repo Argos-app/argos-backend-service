@@ -71,7 +71,7 @@ class ApplicationServiceTest {
 
         service.registerApplication(input, userId);
 
-        verify(databaseRoutineRepository).registrarAplicacao(
+        verify(databaseRoutineRepository).registerApplication(
                 lotId, batchId, userId, input.dose(), input.unit(), input.route(), input.goal());
     }
 

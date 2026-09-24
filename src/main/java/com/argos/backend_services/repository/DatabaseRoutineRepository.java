@@ -12,7 +12,7 @@ import java.util.UUID;
 public interface DatabaseRoutineRepository extends Repository<Application, UUID> {
 
     @Procedure(procedureName = "sp_registrar_aplicacao")
-    void registrarAplicacao(
+    void registerApplication(
             @Param("p_lot_id") UUID lotId,
             @Param("p_medicine_batch_id") UUID medicineBatchId,
             @Param("p_user_id") UUID userId,
@@ -23,7 +23,7 @@ public interface DatabaseRoutineRepository extends Repository<Application, UUID>
     );
 
     @Procedure(procedureName = "sp_marcar_excecao")
-    void marcarExcecao(
+    void registerException(
             @Param("p_lot_id") UUID lotId,
             @Param("p_ear_tag") String earTag,
             @Param("p_motivo") String motivo,
@@ -31,17 +31,17 @@ public interface DatabaseRoutineRepository extends Repository<Application, UUID>
     );
 
     @Query(value = "select fn_data_fim_carencia(:medicineId, :date)", nativeQuery = true)
-    LocalDate calcularDataFimCarencia(
+    LocalDate calculateSlaughterDate(
             @Param("medicineId") UUID medicineId,
             @Param("date") LocalDate date
     );
 
     @Query(value = "select fn_lote_apto_abate(:lotId, :date)", nativeQuery = true)
-    Boolean loteAptoAbate(
+    Boolean lotIsReleaseForSlaughter(
             @Param("lotId") UUID lotId,
             @Param("date") LocalDate date
     );
 
     @Query(value = "select fn_saldo_medicine_batch(:batchId)", nativeQuery = true)
-    BigDecimal saldoMedicineBatch(@Param("batchId") UUID batchId);
+    BigDecimal balanceMedicineBatch(@Param("batchId") UUID batchId);
 }

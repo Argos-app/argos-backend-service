@@ -6,7 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 public interface HerdRepository extends JpaRepository<Herd, UUID> {
     List<Herd> findByPropertyId(Property propertyId);
+    Optional<Herd> findByHerdNameAndActiveTrue(String herdName);
 }

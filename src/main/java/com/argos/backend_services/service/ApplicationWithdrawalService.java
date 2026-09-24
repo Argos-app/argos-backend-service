@@ -44,7 +44,7 @@ public class ApplicationWithdrawalService {
         var today = LocalDate.now(clock);
         try {
             return applicationRepository.findByMeatWithdrawalEndBetween(today, today).stream()
-                    .filter(application -> Boolean.TRUE.equals(databaseRoutineRepository.loteAptoAbate(
+                    .filter(application -> Boolean.TRUE.equals(databaseRoutineRepository.lotIsReleaseForSlaughter(
                             application.getLotId().getId(), today)))
                     .map(application -> mapper.toOut(application, today))
                     .toList();

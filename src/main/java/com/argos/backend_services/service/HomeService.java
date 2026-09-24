@@ -43,7 +43,7 @@ public class HomeService {
     }
 
     private HomeApplicationOut toHomeApplicationOut(Application application, LocalDate referenceDate) {
-        var fitForSlaughter = Boolean.TRUE.equals(databaseRoutineRepository.loteAptoAbate(
+        var fitForSlaughter = Boolean.TRUE.equals(databaseRoutineRepository.lotIsReleaseForSlaughter(
                 application.getLotId().getId(), referenceDate));
 
         return HomeApplicationOut.builder()

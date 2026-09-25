@@ -1,5 +1,7 @@
 package com.argos.backend_services.service;
 
+import com.argos.backend_services.dto.out.AnimalApplicationOut;
+import com.argos.backend_services.dto.out.LotApplicationOut;
 import com.argos.backend_services.entity.AnimalException;
 import com.argos.backend_services.entity.AppUser;
 import com.argos.backend_services.entity.Application;

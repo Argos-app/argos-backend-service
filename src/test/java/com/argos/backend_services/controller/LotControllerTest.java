@@ -2,6 +2,7 @@ package com.argos.backend_services.controller;
 
 import com.argos.backend_services.dto.in.LotIn;
 import com.argos.backend_services.dto.out.LotOut;
+import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.service.LotService;
 import org.junit.jupiter.api.Test;
 import java.util.List;
@@ -16,12 +17,12 @@ class LotControllerTest {
         var response = controller.listLot(user);
         assertThat(response.getStatusCode().value()).isEqualTo(200); assertThat(response.getBody()).isEqualTo(expected); verify(service).listLot(user);
     }
-    @Test void shouldRegisterLotAndReturnOk() {
+    @Test void shouldRegisterLotAndReturnOk() throws LotNotFoundException {
         var service = mock(LotService.class); var controller = new LotController(service); var input = LotIn.builder().lotName("L-1").herdName("H-1").build();
         var response = controller.registerLot(input);
         assertThat(response.getStatusCode().value()).isEqualTo(200); verify(service).registerLot(input);
     }
-    @Test void shouldDeleteLotAndReturnNoContent() {
+    @Test void shouldDeleteLotAndReturnNoContent() throws LotNotFoundException {
         var service = mock(LotService.class); var controller = new LotController(service); var id = UUID.randomUUID(); var user = UUID.randomUUID();
         var response = controller.deleteLot(id, user);
         assertThat(response.getStatusCode().value()).isEqualTo(204); verify(service).deleteLot(id, user);

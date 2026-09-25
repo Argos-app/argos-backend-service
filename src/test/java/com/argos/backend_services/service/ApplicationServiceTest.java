@@ -10,6 +10,7 @@ import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.exception.MedicineNotFoundException;
 import com.argos.backend_services.mapper.ApplicationMapper;
 import com.argos.backend_services.repository.ApplicationRepository;
+import com.argos.backend_services.repository.ApplicationAnimalRepository;
 import com.argos.backend_services.repository.DatabaseRoutineRepository;
 import com.argos.backend_services.repository.LotRepository;
 import com.argos.backend_services.repository.MedicineBatchRepository;
@@ -32,6 +33,7 @@ class ApplicationServiceTest {
     private MedicineBatchRepository medicineBatchRepository;
     private MedicineRepository medicineRepository;
     private DatabaseRoutineRepository databaseRoutineRepository;
+    private ApplicationAnimalRepository applicationAnimalRepository;
     private ApplicationMapper mapper;
     private ApplicationService service;
 
@@ -42,9 +44,11 @@ class ApplicationServiceTest {
         medicineBatchRepository = mock(MedicineBatchRepository.class);
         medicineRepository = mock(MedicineRepository.class);
         databaseRoutineRepository = mock(DatabaseRoutineRepository.class);
+        applicationAnimalRepository = mock(ApplicationAnimalRepository.class);
         mapper = mock(ApplicationMapper.class);
         service = new ApplicationService(lotRepository, applicationRepository,
-                medicineBatchRepository, medicineRepository, databaseRoutineRepository, mapper);
+                medicineBatchRepository, medicineRepository, databaseRoutineRepository,
+                applicationAnimalRepository, mapper);
     }
 
     @Test
@@ -61,7 +65,7 @@ class ApplicationServiceTest {
                 .dose(new BigDecimal("10.5")).unit("ML").route("ORAL")
                 .goal("Tratamento").build();
 
-        when(lotRepository.findByLotCode("LOTE-001")).thenReturn(lot);
+        when(lotRepository.findByLotCode("LOTE-001")).thenReturn(Optional.ofNullable(lot));
         when(medicineRepository.findByBrandName("Ivermectina")).thenReturn(Optional.of(medicine));
         when(medicineBatchRepository.findByMedicineId(medicine)).thenReturn(Optional.of(batch));
 
@@ -83,7 +87,7 @@ class ApplicationServiceTest {
     @Test
     void shouldThrowWhenMedicineDoesNotExist() {
         ApplicationIn input = ApplicationIn.builder().lotName("LOTE-001").medicineName("Inexistente").build();
-        when(lotRepository.findByLotCode("LOTE-001")).thenReturn(Lot.builder().id(UUID.randomUUID()).build());
+        when(lotRepository.findByLotCode("LOTE-001")).thenReturn(Optional.ofNullable(Lot.builder().id(UUID.randomUUID()).build()));
         when(medicineRepository.findByBrandName("Inexistente")).thenReturn(Optional.empty());
 
         assertThrows(MedicineNotFoundException.class, () -> service.registerApplication(input, UUID.randomUUID()));

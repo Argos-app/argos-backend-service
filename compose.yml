@@ -19,6 +19,24 @@ services:
       timeout: 5s
       retries: 5
 
+  dataload:
+    profiles: ["dataload"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dataload
+    environment:
+      DATALOAD_DB_HOST: postgres
+      DATALOAD_DB_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB}
+      DATASOURCE_USER: ${DATASOURCE_USER}
+      DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: "no"
+
   mongodb:
     image: mongo:7-jammy
     container_name: argos-mongodb-app

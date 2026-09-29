@@ -10,6 +10,7 @@ node_modules/
 dist/
 build/
 out/
+!**/dto/out/
 .cache/
 .parcel-cache/
 .next/
@@ -70,6 +71,7 @@ build/
 *.iws
 *.ipr
 out/
+!**/dto/out/
 .idea_modules/
 
 # ─────────────────────────────────────────────

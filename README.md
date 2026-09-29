@@ -19,6 +19,16 @@ Backend da plataforma Argos.
 
 Consulte o [CONTRIBUTING.md](./CONTRIBUTING.md) para instruções completas de configuração do ambiente local, padrão de commits e fluxo de trabalho.
 
+### Carga local de dados de teste
+
+Com o arquivo `.env` local preenchido com `POSTGRES_DB`, `DATASOURCE_USER` e `DATASOURCE_PASSWORD`, inicie o PostgreSQL e a aplicação ao menos uma vez para o Flyway aplicar as migrations. Depois carregue os dados de teste usando `make seed` ou, no Windows, `.\scripts\dev.ps1 seed`:
+
+```bash
+make seed
+```
+
+O Compose instala o Python e o driver dentro de um container temporário; não é necessário instalar essas dependências na máquina. A carga cria registros fictícios com e-mails `@argos.test`, deve ser executada uma vez por banco e falha com uma mensagem clara se os dados já estiverem presentes.
+
 ---
 
 ## Deploy no Discloud

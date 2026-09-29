@@ -1,3 +1,4 @@
+
 create table occurrence
 (
     id                  UUID primary key     default gen_random_uuid(),
@@ -13,6 +14,7 @@ create table occurrence
     constraint ck_occurrence_type check (type in ('DOENCA', 'MORTE', 'REACAO_ADVERSA', 'FERIMENTO')),
     constraint ck_occurrence_resolved check (resolved = false or resolved_at is not null)
 );
+
 
 create table animal_lot_history
 (
@@ -58,17 +60,4 @@ create table notification_delivery
     constraint ck_notification_status check (status in ('PENDENTE', 'ENVIADO', 'FALHOU'))
 );
 
-create table attachment
-(
-    id         UUID primary key      default gen_random_uuid(),
-    user_id    UUID         not null references app_user (id) on delete restrict,
-    entity     VARCHAR(30)  not null,
-    entity_id  UUID         not null,
-    type       VARCHAR(20)  not null,
-    file_path  VARCHAR(255) not null,
-    file_hash  CHAR(64)     not null,
-    size_bytes INTEGER      not null,
-    created_at TIMESTAMP    not null default current_timestamp,
-    constraint ck_attachment_type check (type in ('FOTO_BRINCO', 'BULA', 'NOTA_FISCAL', 'LAUDO', 'RECEITA')),
-    constraint ck_attachment_size check (size_bytes > 0)
-);
+

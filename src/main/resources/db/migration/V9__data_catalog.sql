@@ -1,3 +1,4 @@
+
 create table data_catalog
 (
     id               UUID primary key     default gen_random_uuid(),
@@ -14,3 +15,5 @@ create table data_catalog
     constraint ck_data_catalog_nivel check (access_level in ('PUBLICO', 'INTERNO', 'RESTRITO', 'SENSIVEL')),
     constraint ck_data_catalog_lgpd check (personal_data = false or lgpd_legal_basis is not null)
 );
+
+

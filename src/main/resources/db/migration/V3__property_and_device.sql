@@ -52,7 +52,3 @@ create table device
     created_at TIMESTAMP    not null default current_timestamp,
     constraint ck_device_platform check (platform in ('ANDROID', 'IOS'))
 );
-
-
--- tabelas legadas do 1o ano (rpa)
-

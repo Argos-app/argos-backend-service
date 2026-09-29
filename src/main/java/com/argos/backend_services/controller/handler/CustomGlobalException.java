@@ -5,6 +5,7 @@ import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.exception.UnauthorizedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -51,5 +52,11 @@ public class CustomGlobalException {
     ResponseEntity<ApiError> handleUnauthorizedException(UnauthorizedException ex) {
         var error = new ApiError(ex.getMessage(), HttpStatus.UNAUTHORIZED.toString(), "UNAUTHORIZED");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ApiError> handleAccessDeniedException(AccessDeniedException ex) {
+        var error = new ApiError(ex.getMessage(), HttpStatus.FORBIDDEN.toString(), "FORBIDDEN");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 }

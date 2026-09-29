@@ -1,5 +1,4 @@
 create EXTENSION if not exists pgcrypto;
--- gerar o uuid aleatório
 create EXTENSION if not exists unaccent;
 
 
@@ -16,4 +15,3 @@ select COALESCE(NULLIF(current_setting('app.carga', true), ''), 'false')::BOOLEA
 $$ language sql stable;
 
 
--- tabelas de identidade e acesso

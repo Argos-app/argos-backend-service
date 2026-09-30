@@ -6,11 +6,11 @@ import com.argos.backend_services.dto.out.UserSignInResponseOut;
 import com.argos.backend_services.entity.AppUser;
 import com.argos.backend_services.entity.Property;
 import com.argos.backend_services.repository.PropertyRepository;
-import com.argos.backend_services.repository.UserCredentialRepository;
 import com.argos.backend_services.repository.UserRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,9 +19,9 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthService {
     private final UserRepository userRepository;
-    private final UserCredentialRepository userCredentialRepository;
     private final PropertyRepository propertyRepository;
     private final JwtService jwtService;
 
@@ -51,10 +51,10 @@ public class AuthService {
 
         AppUser appUser = appUserOptional.get();
 
-        boolean isFirstAccess = appUser.getCredential().getFirstLogin();
+        boolean isFirstAccess = appUser.getFirstLogin();
         if (isFirstAccess) {
-            appUser.getCredential().setFirstLogin(false);
-            userCredentialRepository.save(appUser.getCredential());
+            appUser.setFirstLogin(false);
+            userRepository.save(appUser);
         }
 
         String farmName = propertyRepository.findByUserIdAndActiveTrue(appUser.getId())
@@ -75,7 +75,7 @@ public class AuthService {
         }
 
         AppUser user = userOptional.get();
-        user.getCredential().setFirstLogin(false);
+        user.setFirstLogin(false);
 
         userRepository.save(user);
     }

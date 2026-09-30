@@ -1,0 +1,10 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY requirements-dataload.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY scripts/dataload_argos.py ./dataload_argos.py
+
+CMD ["python", "dataload_argos.py"]

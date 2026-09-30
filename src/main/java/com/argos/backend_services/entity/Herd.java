@@ -33,7 +33,7 @@ public class Herd {
     private Integer headCount;
 
     @Column(name = "source_id")
-    private Integer sourceId;
+    private UUID sourceId;
 
     @Column(nullable = false)
     private boolean active;

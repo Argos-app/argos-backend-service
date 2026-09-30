@@ -48,7 +48,7 @@ public class MedicineBatch {
     private Status status;
 
     @Column(name = "source_id")
-    private Integer sourceId;
+    private UUID sourceId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

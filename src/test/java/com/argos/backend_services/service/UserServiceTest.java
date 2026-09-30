@@ -41,7 +41,7 @@ class UserServiceTest {
         when(userRepository.findAllLinked(PageRequest.of(0, 6))).thenReturn(page);
 
         UserService userService = new UserService(userRepository);
-        PageOut<UserListItemOut> result = userService.listUsers(0);
+        PageOut<UserListItemOut> result = userService.listUsers(0, 6);
 
         assertEquals(1, result.data().size());
         assertEquals(0, result.page());
@@ -69,6 +69,6 @@ class UserServiceTest {
         UserRepository userRepository = mock(UserRepository.class);
         UserService userService = new UserService(userRepository);
 
-        assertThrows(BadRequestException.class, () -> userService.listUsers(-1));
+        assertThrows(BadRequestException.class, () -> userService.listUsers(-1, 6));
     }
 }

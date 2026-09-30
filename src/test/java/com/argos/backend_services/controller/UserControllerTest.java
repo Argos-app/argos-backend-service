@@ -58,7 +58,7 @@ public class UserControllerTest {
         PageOut<UserListItemOut> pageOut = new PageOut<>(
                 List.of(item), 0, 6, 7, 2, true, false
         );
-        when(userService.listUsers(0)).thenReturn(pageOut);
+        when(userService.listUsers(0, 6)).thenReturn(pageOut);
 
         mockMvc.perform(get("/users").with(user("admin").authorities(ADMIN_AUTHORITY)))
                 .andExpect(status().isOk())
@@ -86,7 +86,7 @@ public class UserControllerTest {
 
     @Test
     void shouldReturnBadRequestForNegativePage() throws Exception {
-        when(userService.listUsers(-1)).thenThrow(new BadRequestException("Página não pode ser negativa"));
+        when(userService.listUsers(-1, 6)).thenThrow(new BadRequestException("Página não pode ser negativa"));
 
         mockMvc.perform(get("/users").param("page", "-1")
                         .with(user("admin").authorities(ADMIN_AUTHORITY)))

@@ -27,8 +27,9 @@ public class UserController {
             description = "Retorna os usuários com dados de perfil e vínculo à fazenda, paginado com 6 usuários por página"
     )
     public ResponseEntity<PageOut<UserListItemOut>> list(
-            @RequestParam(defaultValue = "0") int page
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(userService.listUsers(page));
+        return ResponseEntity.ok(userService.listUsers(page, size));
     }
 }

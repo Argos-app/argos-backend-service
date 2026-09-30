@@ -12,16 +12,14 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    public static final int PAGE_SIZE = 6;
-
     private final UserRepository userRepository;
 
-    public PageOut<UserListItemOut> listUsers(int page) {
+    public PageOut<UserListItemOut> listUsers(int page, int size) {
         if (page < 0) {
             throw new BadRequestException("Página não pode ser negativa");
         }
 
-        Page<UserListItemOut> result = userRepository.findAllLinked(PageRequest.of(page, PAGE_SIZE));
+        Page<UserListItemOut> result = userRepository.findAllLinked(PageRequest.of(page, size));
 
         return new PageOut<>(
                 result.getContent(),

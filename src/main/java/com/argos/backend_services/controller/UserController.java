@@ -28,7 +28,7 @@ public class UserController {
     )
     public ResponseEntity<PageOut<UserListItemOut>> list(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "6") int size
     ) {
         return ResponseEntity.ok(userService.listUsers(page, size));
     }

@@ -18,10 +18,15 @@ import java.util.List;
 @Schema(description = "DTO de saída do lote")
 public class LotOut {
 
+    @Schema(description = "Nome do lote")
     private String lotName;
-    private LocalDate openDAte;
+    @Schema(description = "Data de criação do lote")
+    private LocalDate openDate;
+    @Schema(description = "Dia estimado de abate")
     private LocalDate releaseSlaughterDate;
+    @Schema(description = "Categoria do lote: ENGORDA/RECRIA")
     private String category;
+    @Schema(description = "em caso de ser lote de exceção: lista de animais e o dia estimado de abate")
     private List<AnimalExceptionOut> animalExceptionOutList;
 
     @Getter
@@ -34,6 +39,6 @@ public class LotOut {
         @Schema(description = "Medicamento aplicado", example = "Ivermectina")
         private String medicine;
         @Schema(description = "Data de liberação para abate", example = "2026-07-01")
-        private String releaseSlaughterDate;
+        private LocalDate releaseSlaughterDate;
     }
 }

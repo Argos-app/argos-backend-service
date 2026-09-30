@@ -78,7 +78,7 @@ class ApplicationServiceTest {
     @Test
     void shouldThrowWhenLotDoesNotExist() {
         ApplicationIn input = ApplicationIn.builder().lotName("INEXISTENTE").build();
-        when(lotRepository.findByLotCode("INEXISTENTE")).thenReturn(null);
+        when(lotRepository.findByLotCode("INEXISTENTE")).thenReturn(Optional.empty());
 
         assertThrows(LotNotFoundException.class, () -> service.registerApplication(input, UUID.randomUUID()));
         verifyNoInteractions(medicineRepository, medicineBatchRepository, databaseRoutineRepository);

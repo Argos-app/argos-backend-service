@@ -1,12 +1,12 @@
 package com.argos.backend_services.service;
 
-import com.argos.backend_services.dto.out.AnimalApplicationOut;
-import com.argos.backend_services.dto.out.LotApplicationOut;
 import com.argos.backend_services.entity.AnimalException;
 import com.argos.backend_services.entity.AppUser;
 import com.argos.backend_services.entity.Application;
 import com.argos.backend_services.entity.ApplicationAnimal;
 import com.argos.backend_services.entity.Lot;
+import com.argos.backend_services.dto.out.AnimalApplicationOut;
+import com.argos.backend_services.dto.out.LotApplicationOut;
 import com.argos.backend_services.exception.ApplicationWithdrawalRoutineException;
 import com.argos.backend_services.mapper.HomeApplicationMapper;
 import com.argos.backend_services.repository.ApplicationAnimalRepository;
@@ -64,7 +64,6 @@ class HomeServiceTest {
         when(applicationRepository.findByUserId_IdAndMeatWithdrawalEndBetween(
                 userId, referenceDate.minusDays(7), referenceDate.plusDays(7)))
                 .thenReturn(List.of(application));
-        when(databaseRoutineRepository.loteAptoAbate(lotId, referenceDate)).thenReturn(false);
         when(mapper.toLotApplicationOut(application, referenceDate, false)).thenReturn(lotApplication);
         when(applicationAnimalRepository.findByApplicationId(application)).thenReturn(List.of(applicationAnimal));
         when(mapper.toAnimalApplicationOut(applicationAnimal, application, referenceDate)).thenReturn(animalApplication);
@@ -79,7 +78,7 @@ class HomeServiceTest {
             assertThat(homeApplication.getLotApplication()).containsExactly(lotApplication);
             assertThat(homeApplication.getAnimalApplication()).containsExactly(animalApplication);
         });
-        verify(databaseRoutineRepository).loteAptoAbate(lotId, referenceDate);
+        verify(databaseRoutineRepository).lotIsReleaseForSlaughter(lotId, referenceDate);
     }
 
     @Test

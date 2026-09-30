@@ -7,7 +7,6 @@ import com.argos.backend_services.exception.MedicineNotFoundException;
 import com.argos.backend_services.mapper.ApplicationMapper;
 import com.argos.backend_services.repository.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -36,7 +35,7 @@ public class ApplicationService {
         var medicineBatch = medicineBatchRepository.findByMedicineId(medicine)
                 .orElseThrow(() -> new MedicineNotFoundException("Could not found medicine batch by medicine id"));
 
-        databaseRoutineRepository.registrarAplicacao
+        databaseRoutineRepository.registerApplication
                 (lot.getId(),
                 medicineBatch.getId(),
                 userId,

@@ -22,6 +22,8 @@ class HomeApplicationMapperTest {
         // Arrange
         var referenceDate = LocalDate.of(2026, 9, 21);
         var application = application(LocalDate.of(2026, 9, 20), LocalDate.of(2026, 9, 25), LocalDate.of(2026, 9, 25));
+        application.getLotId().setLotCode("Lote 1");
+        application.setHeadCountApplied(12);
 
         // Act
         var result = mapper.toLotApplicationOut(application, referenceDate, false);
@@ -32,6 +34,8 @@ class HomeApplicationMapperTest {
         assertThat(result.getMeatWithdrawalEnd()).isEqualTo(LocalDate.of(2026, 9, 25));
         assertThat(result.getDaysFromReferenceDate()).isEqualTo(4);
         assertThat(result.getDaysUntilSlaughter()).isEqualTo(4);
+        assertThat(result.getLotCode()).isEqualTo("Lote 1");
+        assertThat(result.getHeadCount()).isEqualTo(12);
     }
 
     @Test
@@ -56,6 +60,61 @@ class HomeApplicationMapperTest {
         assertThat(result.getMeatWithdrawalEnd()).isEqualTo(LocalDate.of(2026, 9, 23));
         assertThat(result.getDaysFromReferenceDate()).isEqualTo(2);
         assertThat(result.getDaysUntilSlaughter()).isEqualTo(3);
+        assertThat(result.getStatus()).isEqualTo("Pendente");
+    }
+
+    @Test
+    void shouldMarkLotApplicationAsCompletedWhenSlaughterDateIsToday() {
+        var referenceDate = LocalDate.of(2026, 9, 21);
+        var application = application(referenceDate, null, referenceDate);
+
+        var result = mapper.toLotApplicationOut(application, referenceDate, false);
+
+        assertThat(result.getStatus()).isEqualTo("Concluida");
+        assertThat(result.getDaysFromReferenceDate()).isZero();
+        assertThat(result.getDaysUntilSlaughter()).isZero();
+    }
+
+    @Test
+    void shouldReturnZeroForMissingWithdrawalAndSlaughterDates() {
+        var referenceDate = LocalDate.of(2026, 9, 21);
+        var application = application(referenceDate, null, null);
+
+        var result = mapper.toLotApplicationOut(application, referenceDate, false);
+
+        assertThat(result.getDaysFromReferenceDate()).isZero();
+        assertThat(result.getDaysUntilSlaughter()).isZero();
+        assertThat(result.getStatus()).isEqualTo("Pendente");
+    }
+
+    @Test
+    void shouldReturnZeroDaysUntilSlaughterWhenAnimalIsReleased() {
+        var referenceDate = LocalDate.of(2026, 9, 21);
+        var application = application(referenceDate, null, null);
+        var applicationAnimal = ApplicationAnimal.builder()
+                .meatWithdrawalDate(null)
+                .animalExceptionId(AnimalException.builder()
+                        .slaughterReleaseDate(referenceDate.plusDays(10))
+                        .build())
+                .releasedForSlaughter(true)
+                .build();
+
+        var result = mapper.toAnimalApplicationOut(applicationAnimal, application, referenceDate);
+
+        assertThat(result.getDaysFromReferenceDate()).isZero();
+        assertThat(result.getDaysUntilSlaughter()).isZero();
+        assertThat(result.getStatus()).isEqualTo("Concluida");
+    }
+
+    @Test
+    void shouldReturnZeroDaysUntilSlaughterWhenLotIsFitForSlaughter() {
+        var referenceDate = LocalDate.of(2026, 9, 21);
+        var application = application(referenceDate, referenceDate.plusDays(5), referenceDate.plusDays(5));
+
+        var result = mapper.toLotApplicationOut(application, referenceDate, true);
+
+        assertThat(result.getDaysUntilSlaughter()).isZero();
+        assertThat(result.getStatus()).isEqualTo("Concluida");
     }
 
     private Application application(LocalDate applicationDate, LocalDate withdrawalEnd, LocalDate slaughterReleaseDate) {

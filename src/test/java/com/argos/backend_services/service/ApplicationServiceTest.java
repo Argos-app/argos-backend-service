@@ -65,13 +65,13 @@ class ApplicationServiceTest {
                 .dose(new BigDecimal("10.5")).unit("ML").route("ORAL")
                 .goal("Tratamento").build();
 
-        when(lotRepository.findByLotCode("LOTE-001")).thenReturn(Optional.ofNullable(lot));
+        when(lotRepository.findByLotCode("LOTE-001")).thenReturn(Optional.of(lot));
         when(medicineRepository.findByBrandName("Ivermectina")).thenReturn(Optional.of(medicine));
         when(medicineBatchRepository.findByMedicineId(medicine)).thenReturn(Optional.of(batch));
 
         service.registerApplication(input, userId);
 
-        verify(databaseRoutineRepository).registrarAplicacao(
+        verify(databaseRoutineRepository).registerApplication(
                 lotId, batchId, userId, input.dose(), input.unit(), input.route(), input.goal());
     }
 
@@ -87,7 +87,8 @@ class ApplicationServiceTest {
     @Test
     void shouldThrowWhenMedicineDoesNotExist() {
         ApplicationIn input = ApplicationIn.builder().lotName("LOTE-001").medicineName("Inexistente").build();
-        when(lotRepository.findByLotCode("LOTE-001")).thenReturn(Optional.ofNullable(Lot.builder().id(UUID.randomUUID()).build()));
+        when(lotRepository.findByLotCode("LOTE-001"))
+                .thenReturn(Optional.of(Lot.builder().id(UUID.randomUUID()).build()));
         when(medicineRepository.findByBrandName("Inexistente")).thenReturn(Optional.empty());
 
         assertThrows(MedicineNotFoundException.class, () -> service.registerApplication(input, UUID.randomUUID()));

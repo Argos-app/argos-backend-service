@@ -8,6 +8,7 @@ import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.repository.AnimalExceptionRepository;
 import com.argos.backend_services.repository.ApplicationAnimalRepository;
 import com.argos.backend_services.repository.HerdRepository;
+import com.argos.backend_services.repository.LotRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 public class LotMapper {
 
     private final HerdRepository herdRepository;
+    private final LotRepository lotRepository;
     private final AnimalExceptionRepository animalExceptionRepository;
     private final ApplicationAnimalRepository applicationAnimalRepository;
 

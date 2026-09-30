@@ -19,11 +19,8 @@ import java.util.UUID;
 public class LotService {
 
     private final LotRepository lotRepository;
-    private final HerdRepository herdRepository;
-    private final AnimalExceptionRepository animalExceptionRepository;
-    private final ApplicationAnimalRepository applicationAnimalRepository;
     private final DatabaseRoutineRepository databaseRoutineRepository;
-    private LotMapper mapper;
+    private final LotMapper mapper;
 
     @Transactional(readOnly = true)
     public List<LotOut> listLot(UUID userId) {
@@ -34,17 +31,14 @@ public class LotService {
     }
 
     public void registerLot(LotIn input) throws LotNotFoundException {
-        var herd = herdRepository.findByHerdNameAndActiveTrue(input.herdName())
-                .orElseThrow(() -> new LotNotFoundException("Herd not found: " + input.herdName()));
         var lot = mapper.toEntity(input);
-        lot.setHerdId(herd);
         lotRepository.save(lot);
     }
 
     public void deleteLot(UUID lotId, UUID userId) throws LotNotFoundException {
         var lot = lotRepository.findById(lotId)
                 .orElseThrow(() -> new LotNotFoundException("Lot not found: " + lotId));
-        if (!databaseRoutineRepository.loteAptoAbate(lotId, LocalDate.now())) {
+        if (!Boolean.TRUE.equals(databaseRoutineRepository.lotIsReleaseForSlaughter(lotId, LocalDate.now()))) {
             throw new LotNotFoundException("Lot not release for slaughter");
         }
         lot.setActive(false);

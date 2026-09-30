@@ -1,3 +1,4 @@
+-- tabels operacionais
 create table application
 (
     id                  UUID primary key        default gen_random_uuid(),
@@ -11,14 +12,22 @@ create table application
     route               VARCHAR(20)    not null,
     head_count_applied  INTEGER        not null,
     meat_withdrawal_end DATE,
+    applied_limb        VARCHAR(50),
+    applied_site        VARCHAR(100),
     goal                VARCHAR(120),
     notes               TEXT,
+    active              BOOLEAN        not null default true,
+    source_id           UUID,
     synced_at           TIMESTAMP,
     created_at          TIMESTAMP      not null default current_timestamp,
+    updated_at          TIMESTAMP      not null default current_timestamp,
     constraint ck_application_dose check (dose > 0),
     constraint ck_application_count check (head_count_applied > 0),
-    constraint ck_application_data check (application_date <= current_date)
+    constraint ck_application_data check (application_date <= current_date),
+    constraint ck_application_unit check (unit in ('ml', 'mg', 'g', 'UI', 'dose')),
+    constraint ck_application_route check (route in ('INTRAMUSCULAR', 'SUBCUTANEA', 'ORAL', 'TOPICA', 'INTRAVENOSA'))
 );
+
 
 create table application_animal
 (
@@ -44,7 +53,11 @@ create table stock_movement
     quantity          NUMERIC(10, 3) not null,
     movement_date     TIMESTAMP      not null default current_timestamp,
     reason            VARCHAR(60)    not null,
+    source_id         UUID,
     created_at        TIMESTAMP      not null default current_timestamp,
     constraint ck_stock_movement_type check (type in ('E', 'S')),
-    constraint ck_stock_movement_qt check (quantity > 0)
+    constraint ck_stock_movement_qt check (quantity > 0),
+    constraint ck_stock_movement_reason check (reason in
+                                               ('APLICACAO', 'CARGA_INICIAL', 'COMPRA', 'PERDA', 'VENCIMENTO',
+                                                'AJUSTE'))
 );

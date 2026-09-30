@@ -46,7 +46,7 @@ public class Property {
     private String phone;
 
     @Column(name = "source_id")
-    private Integer sourceId;
+    private UUID sourceId;
 
     @Column(nullable = false)
     private Boolean active = true;

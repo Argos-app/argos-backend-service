@@ -58,7 +58,7 @@ public class AnimalException {
     private StatusAnimal status = StatusAnimal.ATIVO;
 
     @Column(name = "source_id")
-    private Integer sourceId;
+    private UUID sourceId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

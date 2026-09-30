@@ -35,7 +35,7 @@ public class Supplier {
     private String address;
 
     @Column(name = "source_id")
-    private Integer sourceId;
+    private UUID sourceId;
 
     @Column(nullable = false)
     private boolean active = true;

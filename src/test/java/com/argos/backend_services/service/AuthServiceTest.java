@@ -3,9 +3,7 @@ package com.argos.backend_services.service;
 import com.argos.backend_services.dto.out.UserSignInResponseOut;
 import com.argos.backend_services.entity.AppUser;
 import com.argos.backend_services.entity.Permission;
-import com.argos.backend_services.entity.UserCredential;
 import com.argos.backend_services.repository.PropertyRepository;
-import com.argos.backend_services.repository.UserCredentialRepository;
 import com.argos.backend_services.repository.UserRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
@@ -31,7 +29,6 @@ class AuthServiceTest {
         UUID userId = UUID.randomUUID();
 
         UserRepository userRepository = mock(UserRepository.class);
-        UserCredentialRepository userCredentialRepository = mock(UserCredentialRepository.class);
         PropertyRepository propertyRepository = mock(PropertyRepository.class);
         FirebaseAuth firebaseAuth = mock(FirebaseAuth.class);
         FirebaseToken decodedToken = mock(FirebaseToken.class);
@@ -42,13 +39,8 @@ class AuthServiceTest {
                 .email(email)
                 .name("Argos User")
                 .permission(permission)
-                .build();
-        UserCredential credential = UserCredential.builder()
-                .user(user)
-                .userId(userId)
                 .firstLogin(true)
                 .build();
-        user.setCredential(credential);
 
         when(firebaseAuth.verifyIdToken(firebaseIdToken)).thenReturn(decodedToken);
         when(decodedToken.getEmail()).thenReturn(email);
@@ -61,7 +53,6 @@ class AuthServiceTest {
         );
         AuthService authService = new AuthService(
                 userRepository,
-                userCredentialRepository,
                 propertyRepository,
                 jwtService
         );
@@ -75,10 +66,10 @@ class AuthServiceTest {
             assertEquals(email, response.email());
             assertNull(response.farmName());
             assertTrue(response.isFirstAccess());
-            assertFalse(user.getCredential().getFirstLogin());
+            assertFalse(user.getFirstLogin());
             assertEquals(userId, jwtService.extractUserId(response.bearerToken()));
             verify(userRepository).findByEmail(email);
-            verify(userCredentialRepository).save(credential);
+            verify(userRepository).save(user);
             verify(propertyRepository).findByUserIdAndActiveTrue(userId);
         }
     }

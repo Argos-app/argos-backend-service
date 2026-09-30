@@ -134,12 +134,12 @@ try:
                 area_hectares,
                 active
             )
-            VALUES (%s, %s, %s, %s, %s, true)
+            VALUES (%s, %s, %s, %s, %s, %s, true)
             RETURNING id
         """, (
             usuarios[i],
             "Fazenda " + str(i + 1),
-            "Endereço de teste " + str(i + 1),
+            "Endereco de teste " + str(i + 1),
             random.choice(cidades),
             "SP",
             random.randint(100, 1000)
@@ -513,3 +513,4 @@ except Exception as erro:
 finally:
     cursor.close()
     conexao.close()
+

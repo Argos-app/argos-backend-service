@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import com.argos.backend_services.entity.Herd;
 import com.argos.backend_services.repository.HerdRepository;
 import com.argos.backend_services.repository.LotRepository;
+import com.argos.backend_services.repository.AnimalExceptionRepository;
+import com.argos.backend_services.repository.ApplicationAnimalRepository;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -17,11 +19,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 class LotMapperTest {
     private final HerdRepository herdRepository = mock(HerdRepository.class);
     private final LotRepository lotRepository = mock(LotRepository.class);
-    private final LotMapper mapper = new LotMapper(herdRepository, lotRepository);
+    private final AnimalExceptionRepository animalExceptionRepository = mock(AnimalExceptionRepository.class);
+    private final ApplicationAnimalRepository applicationAnimalRepository = mock(ApplicationAnimalRepository.class);
+    private final LotMapper mapper = new LotMapper(
+            herdRepository,
+            lotRepository,
+            animalExceptionRepository,
+            applicationAnimalRepository);
     @Test void shouldMapEntityToOutput() {
         var lot = Lot.builder().lotCode("L-1").category("Engorda").openDate(LocalDate.of(2026, 1, 2)).slaughterReleaseDate(LocalDate.of(2026, 7, 1)).build();
         var result = mapper.toOut(lot);
-        assertThat(result.getLotName()).isEqualTo("L-1"); assertThat(result.getOpenDAte()).isEqualTo(LocalDate.of(2026, 1, 2)); assertThat(result.getReleaseSlaughterDate()).isEqualTo(LocalDate.of(2026, 7, 1));
+        assertThat(result.getLotName()).isEqualTo("L-1"); assertThat(result.getOpenDate()).isEqualTo(LocalDate.of(2026, 1, 2)); assertThat(result.getReleaseSlaughterDate()).isEqualTo(LocalDate.of(2026, 7, 1));
     }
     @Test void shouldMapInputToActiveEntity() throws Exception {
         var herd = Herd.builder().herdName("H-1").build();

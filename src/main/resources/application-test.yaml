@@ -7,9 +7,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/argos_test
   flyway:
     enabled: false
 security:

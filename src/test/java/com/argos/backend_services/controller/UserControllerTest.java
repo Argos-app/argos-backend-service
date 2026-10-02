@@ -2,6 +2,8 @@ package com.argos.backend_services.controller;
 
 import com.argos.backend_services.config.SecurityConfig;
 import com.argos.backend_services.dto.out.PageOut;
+import com.argos.backend_services.dto.in.CreateUserIn;
+import com.argos.backend_services.dto.out.CreateUserOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.exception.BadRequestException;
 import com.argos.backend_services.service.JwtService;
@@ -20,8 +22,10 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,16 +48,50 @@ public class UserControllerTest {
     private JwtService jwtService;
 
     @Test
+    void shouldCreateUserForAdmin() throws Exception {
+        UUID userId = UUID.randomUUID();
+        CreateUserIn input = new CreateUserIn("New User", "new@argos.com", "12345678901",
+                "password123", UUID.randomUUID(), UUID.randomUUID());
+        when(userService.create(input)).thenReturn(new CreateUserOut(userId, "New User", "new@argos.com"));
+
+        mockMvc.perform(post("/users")
+                        .with(user("admin").authorities(ADMIN_AUTHORITY))
+                        .contentType("application/json")
+                        .content("""
+                                {"name":"New User","email":"new@argos.com","cpf":"12345678901",
+                                 "password":"password123","permissionId":"%s","propertyId":"%s"}
+                                """.formatted(input.permissionId(), input.propertyId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.userId").value(userId.toString()))
+                .andExpect(jsonPath("$.name").value("New User"))
+                .andExpect(jsonPath("$.email").value("new@argos.com"));
+
+        verify(userService).create(input);
+    }
+
+    @Test
+    void shouldForbidUserCreationForNonAdmin() throws Exception {
+        mockMvc.perform(post("/users")
+                        .with(user("user").authorities(USER_AUTHORITY))
+                        .contentType("application/json")
+                        .content("{}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void shouldReturnPaginatedUsersForAdmin() throws Exception {
         UserListItemOut item = new UserListItemOut(
                 UUID.fromString("11111111-1111-1111-1111-111111111111"),
                 "https://example.com/photo.jpg",
                 "Argos User",
+                "12345678901",
                 "user@argos.com",
                 true,
                 "Fazenda Sao Joao",
                 "12345678000190",
-                LocalDate.of(2026, 1, 15)
+                LocalDate.of(2026, 1, 15),
+                UUID.randomUUID(),
+                UUID.randomUUID()
         );
         PageOut<UserListItemOut> pageOut = new PageOut<>(
                 List.of(item), 0, 6, 7, 2, true, false
@@ -65,6 +103,7 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.data[0].userId").value("11111111-1111-1111-1111-111111111111"))
                 .andExpect(jsonPath("$.data[0].photoUrl").value("https://example.com/photo.jpg"))
                 .andExpect(jsonPath("$.data[0].name").value("Argos User"))
+                .andExpect(jsonPath("$.data[0].cpf").value("12345678901"))
                 .andExpect(jsonPath("$.data[0].email").value("user@argos.com"))
                 .andExpect(jsonPath("$.data[0].active").value(true))
                 .andExpect(jsonPath("$.data[0].farmName").value("Fazenda Sao Joao"))

@@ -36,7 +36,7 @@ jobs:
       - name: Build and run tests
         run: >
           ./mvnw -B clean package -Dspring.profiles.active=test
-          -Dspring-boot.excludeGroupIds=io.grpc,com.google.cloud,org.conscrypt
+          -Dspring-boot.excludeGroupIds=com.google.cloud,org.conscrypt
 
       - name: Stage app.jar
         run: cp target/app.jar app.jar

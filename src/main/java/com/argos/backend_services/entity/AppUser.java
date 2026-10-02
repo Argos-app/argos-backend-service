@@ -33,6 +33,9 @@ public class AppUser {
     @Column(nullable = false, unique = true, length = 120)
     private String email;
 
+    @Column(name = "firebase_uid", length = 128)
+    private String firebaseUid;
+
     @Column(name = "photo_url", length = 512)
     private String photoUrl;
 

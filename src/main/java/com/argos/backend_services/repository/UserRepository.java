@@ -14,16 +14,25 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<AppUser, UUID> {
     Optional<AppUser> findByEmail(String email);
 
+    boolean existsByCpf(String cpf);
+
+    boolean existsByEmailAndIdNot(String email, UUID id);
+
+    boolean existsByCpfAndIdNot(String cpf, UUID id);
+
     @Query("""
             select new com.argos.backend_services.dto.out.UserListItemOut(
                 u.id,
                 u.photoUrl,
                 u.name,
+                u.cpf,
                 u.email,
                 u.active,
                 p.name,
                 p.cnpj,
-                up.linkDate
+                up.linkDate,
+                p.id,
+                u.permission.id
             )
             from UserProperty up
             inner join up.user u

@@ -14,10 +14,6 @@ spring:
     username: ${DATASOURCE_USER}
     password: ${DATASOURCE_PASSWORD}
 
-  data:
-    mongodb:
-      uri: ${MONGODB_URI}
-
   flyway:
     enabled: true
     locations: classpath:db/migration

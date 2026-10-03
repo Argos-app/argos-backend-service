@@ -15,22 +15,19 @@ create table app_user
     name          VARCHAR(120) not null,
     cpf           CHAR(11)     not null unique,
     email         VARCHAR(120) not null unique,
+    firebase_uid  VARCHAR(128),
+
+    photo_url     TEXT,
+
     active        BOOLEAN      not null default true,
+    first_login   BOOLEAN      not null default true,
+    blocked_until TIMESTAMP,
+    source_id     UUID,
     created_at    TIMESTAMP    not null default current_timestamp,
     updated_at    TIMESTAMP    not null default current_timestamp,
+
     constraint ck_app_user_cpf check (cpf ~ '^[0-9]{11}$'),
     constraint ck_app_user_email check (email like '%_@_%._%')
 );
 
-create table user_credential
-(
-    user_id             UUID primary key references app_user (id) on delete cascade,
-    password_hash       VARCHAR(255) not null,
-    first_login         BOOLEAN               default true,
-    two_factor_on       BOOLEAN      not null default false,
-    failed_attempts     INTEGER      not null default 0,
-    blocked_until       TIMESTAMP,
-    password_changed_at TIMESTAMP,
-    updated_at          TIMESTAMP    not null default current_timestamp,
-    constraint ck_user_credential_attempts check (failed_attempts >= 0)
-);
+

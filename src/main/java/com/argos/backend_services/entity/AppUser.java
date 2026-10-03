@@ -33,6 +33,13 @@ public class AppUser {
     @Column(nullable = false, unique = true, length = 120)
     private String email;
 
+    @Column(name = "photo_url", length = 512)
+    private String photoUrl;
+
+    @Column(name = "first_login", nullable = false)
+    @Builder.Default
+    private Boolean firstLogin = true;
+
     @Column(nullable = false)
     private Boolean active = true;
 
@@ -41,9 +48,6 @@ public class AppUser {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
-    private UserCredential credential;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @Builder.Default

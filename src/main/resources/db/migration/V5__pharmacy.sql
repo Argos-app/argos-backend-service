@@ -1,3 +1,4 @@
+
 create table supplier
 (
     id           UUID primary key      default gen_random_uuid(),
@@ -6,7 +7,7 @@ create table supplier
     email        VARCHAR(120),
     phone        VARCHAR(20),
     address      VARCHAR(255),
-    source_id    INTEGER,
+    source_id    UUID,
     active       BOOLEAN      not null default true,
     created_at   TIMESTAMP    not null default current_timestamp,
     updated_at   TIMESTAMP    not null default current_timestamp,
@@ -17,7 +18,9 @@ create table therapeutic_category
 (
     id          UUID primary key default gen_random_uuid(),
     name        VARCHAR(40) not null unique,
-    description TEXT
+    name_norm   TEXT generated always as (fn_norm_texto(name)) stored,
+    description TEXT,
+    constraint uq_therapeutic_category_norm unique (name_norm)
 );
 
 create table medicine
@@ -34,15 +37,16 @@ create table medicine
     meat_withdrawal_days    INTEGER        not null default 0,
     dose                    NUMERIC(10, 3) not null,
     unit                    VARCHAR(10)    not null,
-    route                   VARCHAR(20)    not null,
-    source_id               INTEGER,
+    route                   VARCHAR(20),
+    source_id               UUID,
     active                  BOOLEAN        not null default true,
     created_at              TIMESTAMP      not null default current_timestamp,
     updated_at              TIMESTAMP      not null default current_timestamp,
     constraint ck_medicine_carencia check (meat_withdrawal_days >= 0),
     constraint ck_medicine_dose check (dose > 0),
     constraint ck_medicine_unit check (unit in ('ml', 'mg', 'g', 'UI', 'dose')),
-    constraint ck_medicine_route check (route in ('INTRAMUSCULAR', 'SUBCUTANEA', 'ORAL', 'TOPICA', 'INTRAVENOSA'))
+    constraint ck_medicine_route check (route is null or
+                                        route in ('INTRAMUSCULAR', 'SUBCUTANEA', 'ORAL', 'TOPICA', 'INTRAVENOSA'))
 );
 
 create table medicine_batch
@@ -54,13 +58,17 @@ create table medicine_batch
     expiry_date      DATE           not null,
     delivery_date    DATE           not null,
     initial_quantity NUMERIC(10, 3) not null,
+    min_stock        NUMERIC(10, 3),
+    max_stock        NUMERIC(10, 3),
     storage_place    VARCHAR(60),
     status           VARCHAR(15)    not null default 'DISPONIVEL',
-    source_id        INTEGER,
+    source_id        UUID,
     created_at       TIMESTAMP      not null default current_timestamp,
     updated_at       TIMESTAMP      not null default current_timestamp,
     constraint uq_medicine_batch unique (medicine_id, batch_number),
     constraint ck_medicine_batch_qt check (initial_quantity > 0),
     constraint ck_medicine_batch_dt check (expiry_date > manufacture_date),
-    constraint ck_medicine_batch_st check (status in ('DISPONIVEL', 'VENCIDO', 'ESGOTADO', 'RECOLHIDO'))
+    constraint ck_medicine_batch_st check (status in ('DISPONIVEL', 'VENCIDO', 'ESGOTADO', 'RECOLHIDO')),
+    constraint ck_medicine_batch_minmax check (min_stock is null or max_stock is null or max_stock >= min_stock)
 );
+

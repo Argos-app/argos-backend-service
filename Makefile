@@ -3,7 +3,7 @@
 
 JAVA_VERSION = $(shell java -version 2>&1 | head -n 1 | cut -d'"' -f2 | cut -d'.' -f1)
 
-.PHONY: up down restart logs ps clean run test format lint deploy deploy-homolog
+.PHONY: up down restart logs ps clean run seed test format lint deploy deploy-homolog
 
 check-java:
 	@if [ -z "$(JAVA_VERSION)" ]; then \
@@ -44,6 +44,10 @@ clean:
 run: check-java
 	./mvnw spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.useTestClasspath=false
 
+## Load local test data (Docker only; requires the dev database schema to be migrated)
+seed:
+	docker compose --profile dataload run --build --rm dataload
+
 ## Run tests
 test: check-java
 	./mvnw -B test -Dspring.profiles.active=test
@@ -64,4 +68,4 @@ deploy:
 deploy-homolog:
 	./scripts/discloud-deploy.sh homolog
 
-.PHONY: up down restart logs ps clean run test format lint deploy deploy-homolog check-java
+.PHONY: up down restart logs ps clean run seed test format lint deploy deploy-homolog check-java

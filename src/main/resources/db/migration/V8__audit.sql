@@ -1,3 +1,20 @@
+create table attachment
+(
+    id         UUID primary key      default gen_random_uuid(),
+    user_id    UUID         not null references app_user (id) on delete restrict,
+    entity     VARCHAR(30)  not null,
+    entity_id  UUID         not null,
+    type       VARCHAR(20)  not null,
+    file_path  VARCHAR(255) not null,
+    file_hash  CHAR(64)     not null,
+    size_bytes INTEGER      not null,
+    created_at TIMESTAMP    not null default current_timestamp,
+    constraint ck_attachment_type check (type in ('FOTO_BRINCO', 'BULA', 'NOTA_FISCAL', 'LAUDO', 'RECEITA')),
+    constraint ck_attachment_size check (size_bytes > 0)
+);
+
+-- auditoria e monitoramento de carga
+
 create table change_audit
 (
     id          UUID primary key     default gen_random_uuid(),
@@ -20,14 +37,17 @@ create table access_audit
     login_tried    VARCHAR(120) not null,
     success        BOOLEAN      not null,
     failure_reason VARCHAR(60),
+    source         VARCHAR(10)  not null default 'MOBILE',
     ip_address     INET,
     user_agent     VARCHAR(255),
     happened_at    TIMESTAMP    not null default current_timestamp,
     constraint ck_access_audit_motivo check (
         failure_reason is null or failure_reason in
-                                  ('SENHA_ERRADA', 'CONTA_BLOQUEADA', 'USUARIO_INEXISTENTE')
-        )
+                                  ('SENHA_ERRADA', 'CONTA_BLOQUEADA', 'USUARIO_INEXISTENTE', 'TOKEN_INVALIDO')
+        ),
+    constraint ck_access_audit_source check (source in ('WEB', 'MOBILE', 'API'))
 );
+
 
 create table interaction_audit
 (

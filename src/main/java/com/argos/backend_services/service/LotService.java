@@ -37,9 +37,9 @@ public class LotService {
 
     public void deleteLot(UUID lotId, UUID userId) throws LotNotFoundException {
         var lot = lotRepository.findById(lotId)
-                .orElseThrow(() -> new LotNotFoundException("Lot not found: " + lotId));
+                .orElseThrow(() -> new LotNotFoundException("Lote não achado pelo id: " + lotId));
         if (!Boolean.TRUE.equals(databaseRoutineRepository.lotIsReleaseForSlaughter(lotId, LocalDate.now()))) {
-            throw new LotNotFoundException("Lot not release for slaughter");
+            throw new LotNotFoundException("Lote não disponível para abate");
         }
         lot.setActive(false);
         lotRepository.save(lot);

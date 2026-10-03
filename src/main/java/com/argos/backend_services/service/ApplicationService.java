@@ -27,7 +27,7 @@ public class ApplicationService {
     public void registerApplication(ApplicationIn applicationIn, UUID userId) throws LotNotFoundException, MedicineNotFoundException {
 
         var lot = lotRepository.findByLotCode(applicationIn.lotName())
-                .orElseThrow(() -> new LotNotFoundException("Could not foundo by lote"));
+                .orElseThrow(() -> new LotNotFoundException("Não foi possível achar o lot pelo nome"));
 
         var medicine = medicineRepository.findByBrandName(applicationIn.medicineName())
                 .orElseThrow(() -> new MedicineNotFoundException("Could not found medicine by name"));

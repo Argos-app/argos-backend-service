@@ -31,6 +31,25 @@ O Compose instala o Python e o driver dentro de um container temporário; não �
 
 ---
 
+## Deploy no Render
+
+Use o `Dockerfile` da raiz. O container lê `PORT` e inicia com o perfil `prod` por padrão.
+Se `SPRING_PROFILES_ACTIVE` já estiver definido no serviço, ajuste seu valor para `prod`.
+
+Configure `DATASOURCE_URL`, `DATASOURCE_USER`, `DATASOURCE_PASSWORD`, `JWT_SECRET` e
+`FIREBASE_SERVICE_ACCOUNT_JSON` no ambiente do serviço. Na interface de variáveis,
+o valor do JSON deve começar com `{` e terminar com `}`, sem aspas simples externas.
+O arquivo de credenciais Firebase local não é enviado ao contexto Docker.
+
+O login é `POST /api/v1/auth/signin`, com `Authorization: Bearer <Firebase ID token>`.
+O usuário precisa existir no Firebase e na tabela `app_user` do banco usado pelo serviço.
+Um usuário ausente nesse banco recebe `404`; o login não exclui sua conta Firebase.
+O JWT devolvido por essa chamada é usado nas demais rotas protegidas.
+
+Os logs mostram `firebase_initialized` com o projeto e a origem das credenciais,
+`signin_request` e `signin_response` com método e status, e `firebase_token_rejected`
+com o código do Firebase. Nenhum desses logs contém tokens, e-mails ou chaves privadas.
+
 ## Deploy no Discloud
 
 Este projeto está configurado para deploy na [Discloud](https://discloud.com) como uma aplicação `site` (API).

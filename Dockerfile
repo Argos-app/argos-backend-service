@@ -17,4 +17,5 @@ USER spring:spring
 
 EXPOSE 8080
 ENV PORT=8080
+ENV SPRING_PROFILES_ACTIVE=prod
 ENTRYPOINT ["sh", "-c", "exec java -jar app.jar --server.port=${PORT:-8080}"]

@@ -22,8 +22,7 @@ spring:
 logging:
   level:
     root: INFO
-    com:
-      argos: DEBUG
+    com.argos: DEBUG
 
 firebase:
   service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:#{null}}

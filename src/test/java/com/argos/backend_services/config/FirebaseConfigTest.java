@@ -13,6 +13,11 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class FirebaseConfigTest {
+    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+            .withInitializer(context -> context.getEnvironment().setActiveProfiles("dev"))
+            .withUserConfiguration(FirebaseConfig.class)
+            .withPropertyValues("firebase.service-account-path=", "FIREBASE_SERVICE_ACCOUNT_JSON=");
+
     @Test
     void shouldInitializeUsingJsonWithoutServiceAccountPath() throws Exception {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
@@ -30,7 +35,7 @@ class FirebaseConfigTest {
                 "client_id", "123456789",
                 "token_uri", "https://oauth2.googleapis.com/token"));
 
-        new ApplicationContextRunner().withUserConfiguration(FirebaseConfig.class)
+        contextRunner
                 .withPropertyValues("FIREBASE_SERVICE_ACCOUNT_JSON=" + json)
                 .run(context -> {
                     assertThat(context).hasNotFailed();
@@ -46,7 +51,11 @@ class FirebaseConfigTest {
 
     @Test
     void shouldFailAtStartupWhenCredentialsAreMissing() {
-        new ApplicationContextRunner().withUserConfiguration(FirebaseConfig.class)
-                .run(context -> assertThat(context).hasFailed());
+        contextRunner.run(context -> {
+            assertThat(context).hasFailed();
+            assertThat(context.getStartupFailure())
+                    .hasRootCauseInstanceOf(IllegalStateException.class)
+                    .hasRootCauseMessage("Credenciais firebase não configuradas");
+        });
     }
 }

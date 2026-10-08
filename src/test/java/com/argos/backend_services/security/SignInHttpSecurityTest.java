@@ -8,6 +8,7 @@ import com.argos.backend_services.controller.resolver.CurrentUserArgumentResolve
 import com.argos.backend_services.controller.resolver.FirebaseTokenArgumentResolver;
 import com.argos.backend_services.service.AuthService;
 import com.argos.backend_services.service.JwtService;
+import com.argos.backend_services.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -84,6 +85,11 @@ class SignInHttpSecurityTest {
         @Bean
         AuthService authService() {
             return mock(AuthService.class);
+        }
+
+        @Bean
+        UserRepository userRepository() {
+            return mock(UserRepository.class);
         }
     }
 }

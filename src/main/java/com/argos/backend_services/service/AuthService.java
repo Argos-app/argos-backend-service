@@ -67,15 +67,26 @@ public class AuthService {
             userRepository.save(appUser);
         }
 
-        String farmName = propertyRepository.findByUserIdAndActiveTrue(appUser.getId())
+        Property activeProperty = propertyRepository.findByUserIdAndActiveTrue(appUser.getId())
                 .stream()
                 .findFirst()
-                .map(Property::getName)
                 .orElse(null);
+
+        String farmName = activeProperty == null ? null : activeProperty.getName();
+        String address = activeProperty == null ? null : activeProperty.getAddress();
 
         String bearerToken = jwtService.generate(appUser);
 
-        return new UserSignInResponseOut(bearerToken, appUser.getName(), appUser.getEmail(), farmName, isFirstAccess);
+        return new UserSignInResponseOut(
+                bearerToken,
+                appUser.getName(),
+                appUser.getEmail(),
+                farmName,
+                isFirstAccess,
+                appUser.getId(),
+                appUser.getPhotoUrl(),
+                appUser.getCpf(),
+                address);
     }
 
     public void updateFirstAccess(UUID uuid) {

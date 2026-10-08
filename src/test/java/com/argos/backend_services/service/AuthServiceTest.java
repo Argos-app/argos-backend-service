@@ -3,6 +3,7 @@ package com.argos.backend_services.service;
 import com.argos.backend_services.dto.out.UserSignInResponseOut;
 import com.argos.backend_services.entity.AppUser;
 import com.argos.backend_services.entity.Permission;
+import com.argos.backend_services.entity.Property;
 import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.exception.UnauthorizedException;
 import com.argos.backend_services.exception.ArgosInternalServerException;
@@ -96,14 +97,21 @@ class AuthServiceTest {
                 .id(userId)
                 .email(email)
                 .name("Argos User")
+                .cpf("12345678901")
+                .photoUrl("https://example.com/user.png")
                 .permission(permission)
                 .firstLogin(true)
+                .build();
+
+        Property property = Property.builder()
+                .name("Fazenda Argos")
+                .address("Estrada da Fazenda, 100")
                 .build();
 
         when(firebaseAuth.verifyIdToken(firebaseIdToken)).thenReturn(decodedToken);
         when(decodedToken.getEmail()).thenReturn(email);
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
-        when(propertyRepository.findByUserIdAndActiveTrue(userId)).thenReturn(List.of());
+        when(propertyRepository.findByUserIdAndActiveTrue(userId)).thenReturn(List.of(property));
 
         JwtService jwtService = new JwtService(
                 "test-secret-minimo-32-caracteres-para-hs256",
@@ -122,7 +130,11 @@ class AuthServiceTest {
 
             assertEquals("Argos User", response.userName());
             assertEquals(email, response.email());
-            assertNull(response.farmName());
+            assertEquals(userId, response.userId());
+            assertEquals("https://example.com/user.png", response.photoUrl());
+            assertEquals("12345678901", response.cpf());
+            assertEquals("Estrada da Fazenda, 100", response.address());
+            assertEquals("Fazenda Argos", response.farmName());
             assertTrue(response.isFirstAccess());
             assertFalse(user.getFirstLogin());
             assertEquals(userId, jwtService.extractUserId(response.bearerToken()));

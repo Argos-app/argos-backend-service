@@ -7,10 +7,13 @@ public record UserListItemOut(
         UUID userId,
         String photoUrl,
         String name,
+        String cpf,
         String email,
         Boolean active,
         String farmName,
         String cnpj,
-        LocalDate linkDate
+        LocalDate linkDate,
+        UUID propertyId,
+        UUID permissionId
 ) {
 }

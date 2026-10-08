@@ -1,0 +1,12 @@
+.git
+.github
+.idea
+node_modules
+target
+.env
+.env.*
+!.env.example
+*.log
+src/main/resources/firebase-service-account.json
+Dockerfile.dataload
+compose.yml

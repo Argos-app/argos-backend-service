@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface PropertyRepository extends JpaRepository<Property, UUID> {
     List<Property> findByUserIdAndActiveTrue(UUID userId);
+
+    List<Property> findByActiveTrueOrderByNameAsc();
 }

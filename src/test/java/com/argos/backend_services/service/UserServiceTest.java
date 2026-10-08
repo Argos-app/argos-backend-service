@@ -4,6 +4,9 @@ import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.exception.BadRequestException;
 import com.argos.backend_services.repository.UserRepository;
+import com.argos.backend_services.repository.UserPropertyRepository;
+import com.argos.backend_services.repository.PermissionRepository;
+import com.argos.backend_services.repository.PropertyRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,19 +31,25 @@ class UserServiceTest {
                 userId,
                 "https://example.com/photo.jpg",
                 "Argos User",
+                "12345678901",
                 "user@argos.com",
                 true,
                 "Fazenda Sao Joao",
                 "12345678000190",
-                LocalDate.of(2026, 1, 15)
+                LocalDate.of(2026, 1, 15),
+                UUID.randomUUID(),
+                UUID.randomUUID()
         );
 
         Page<UserListItemOut> page = new PageImpl<>(List.of(item), PageRequest.of(0, 6), 7);
 
         UserRepository userRepository = mock(UserRepository.class);
+        UserPropertyRepository userPropertyRepository = mock(UserPropertyRepository.class);
+        PermissionRepository permissionRepository = mock(PermissionRepository.class);
+        PropertyRepository propertyRepository = mock(PropertyRepository.class);
         when(userRepository.findAllLinked(PageRequest.of(0, 6))).thenReturn(page);
 
-        UserService userService = new UserService(userRepository);
+        UserService userService = new UserService(userRepository, userPropertyRepository, permissionRepository, propertyRepository);
         PageOut<UserListItemOut> result = userService.listUsers(0, 6);
 
         assertEquals(1, result.data().size());
@@ -55,6 +64,7 @@ class UserServiceTest {
         assertEquals(userId, resultItem.userId());
         assertEquals("https://example.com/photo.jpg", resultItem.photoUrl());
         assertEquals("Argos User", resultItem.name());
+        assertEquals("12345678901", resultItem.cpf());
         assertEquals("user@argos.com", resultItem.email());
         assertTrue(resultItem.active());
         assertEquals("Fazenda Sao Joao", resultItem.farmName());
@@ -67,7 +77,8 @@ class UserServiceTest {
     @Test
     void shouldRejectNegativePage() {
         UserRepository userRepository = mock(UserRepository.class);
-        UserService userService = new UserService(userRepository);
+        UserService userService = new UserService(userRepository, mock(UserPropertyRepository.class),
+                mock(PermissionRepository.class), mock(PropertyRepository.class));
 
         assertThrows(BadRequestException.class, () -> userService.listUsers(-1, 6));
     }

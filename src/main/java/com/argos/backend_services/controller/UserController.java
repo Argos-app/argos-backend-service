@@ -29,21 +29,18 @@ public class UserController implements UserControllerApi {
     private final UserService userService;
 
     @Override
-    @GetMapping("/options")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<UserCreationOptionsOut> getCreationOptions() {
         return ResponseEntity.ok(userService.getCreationOptions());
     }
 
     @Override
-    @GetMapping("/permissions")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<UserOptionOut>> listPermissions() {
         return ResponseEntity.ok(userService.getActivePermissions());
     }
 
     @Override
-    @GetMapping("/accesses")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<PageOut<UserAccessOut>> listAccesses(@RequestParam(defaultValue = "0") int page,
                                                                @RequestParam(defaultValue = "10") int size) {
@@ -51,7 +48,6 @@ public class UserController implements UserControllerApi {
     }
 
     @Override
-    @PatchMapping("/{userId}/access")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> updateAccess(@PathVariable UUID userId, @Valid @RequestBody UpdateUserAccessIn data) {
         userService.updateAccess(userId, data);
@@ -59,7 +55,6 @@ public class UserController implements UserControllerApi {
     }
 
     @Override
-    @PatchMapping("/{userId}/status")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> updateStatus(@PathVariable UUID userId, @Valid @RequestBody UpdateUserStatusIn data) {
         userService.updateStatus(userId, data);
@@ -67,7 +62,6 @@ public class UserController implements UserControllerApi {
     }
 
     @Override
-    @GetMapping("/admins")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<PageOut<AdminUserOptionOut>> listAdministrators(@RequestParam(defaultValue = "0") int page,
                                                                           @RequestParam(defaultValue = "6") int size) {
@@ -75,14 +69,12 @@ public class UserController implements UserControllerApi {
     }
 
     @Override
-    @PostMapping
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<CreateUserOut> createUser(@Valid @RequestBody CreateUserIn data) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.create(data));
     }
 
     @Override
-    @PutMapping("/{userId}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> updateUser(@PathVariable UUID userId, @Valid @RequestBody UpdateUserIn data) {
         userService.update(userId, data);
@@ -90,7 +82,6 @@ public class UserController implements UserControllerApi {
     }
 
     @Override
-    @GetMapping
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<PageOut<UserListItemOut>> list(@RequestParam(defaultValue = "0") int page,
                                                         @RequestParam(defaultValue = "6") int size) {
@@ -98,7 +89,6 @@ public class UserController implements UserControllerApi {
     }
 
     @Override
-    @DeleteMapping("/{userId}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable String userId) {
         userService.delete(userId);

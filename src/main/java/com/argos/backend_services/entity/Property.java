@@ -27,7 +27,7 @@ public class Property {
     @Column(nullable = false, length = 120)
     private String name;
 
-    @Column(length = 14, columnDefinition = "bpchar")
+    @Column(length = 14, columnDefinition = "char(14)")
     private String cnpj;
 
     @Column(nullable = false, length = 255)
@@ -36,7 +36,7 @@ public class Property {
     @Column(nullable = false, length = 100)
     private String city;
 
-    @Column(nullable = false, length = 2, columnDefinition = "bpchar")
+    @Column(nullable = false, length = 2, columnDefinition = "char(2)")
     private String state;
 
     @Column(name = "area_hectares", precision = 10, scale = 2)

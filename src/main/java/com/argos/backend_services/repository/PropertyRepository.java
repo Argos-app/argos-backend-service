@@ -7,11 +7,16 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 public interface PropertyRepository extends JpaRepository<Property, UUID> {
     List<Property> findByUserIdAndActiveTrue(UUID userId);
 
-    List<Property> findByActiveOrderByNameAsc(boolean active);
+    List<Property> findByUser_IdAndActiveTrueOrderByNameAsc(UUID administratorId);
 
-    Page<Property> findByActive(Pageable pageable, boolean active);
+    Page<Property> findByUser_IdAndActiveTrue(UUID administratorId, Pageable pageable);
+
+    Optional<Property> findByIdAndUser_Id(UUID propertyId, UUID administratorId);
+
+    boolean existsByUser_Id(UUID userId);
 }

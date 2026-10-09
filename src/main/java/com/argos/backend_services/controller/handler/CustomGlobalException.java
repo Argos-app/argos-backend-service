@@ -11,9 +11,16 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class CustomGlobalException {
+    @ExceptionHandler(ResponseStatusException.class)
+    ResponseEntity<ApiError> handleResponseStatusException(ResponseStatusException ex) {
+        return ResponseEntity.status(ex.getStatusCode()).body(new ApiError(
+                ex.getReason(), ex.getStatusCode().toString(), HttpStatus.valueOf(ex.getStatusCode().value()).name()));
+    }
+
     @ExceptionHandler(BadRequestException.class)
     ResponseEntity<ApiError> handleBadRequestException(BadRequestException ex) {
         var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "BAD_REQUEST");

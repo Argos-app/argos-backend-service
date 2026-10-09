@@ -8,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,6 +22,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -41,6 +43,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
 
         if (header == null || !header.startsWith("Bearer ")) {
+            log.debug("jwt_authentication_skipped method={} path={} reason=missing_bearer_header",
+                    request.getMethod(), request.getServletPath());
             filterChain.doFilter(request, response);
             return;
         }
@@ -48,6 +52,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = header.substring(7);
 
         if (token.isBlank() || !jwtService.isValid(token)) {
+            log.warn("jwt_authentication_rejected method={} path={} reason=invalid_or_expired_token",
+                    request.getMethod(), request.getServletPath());
             filterChain.doFilter(request, response);
             return;
         }
@@ -58,6 +64,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (currentAccess.isEmpty()
                 || !Boolean.TRUE.equals(currentAccess.get().getUserActive())
                 || !Boolean.TRUE.equals(currentAccess.get().getPermissionActive())) {
+            String reason = currentAccess.map(currentUserAccessOut -> !Boolean.TRUE.equals(currentUserAccessOut.getUserActive())
+                    ? "user_inactive" : "permission_inactive").orElse("user_not_found");
+            log.warn("jwt_authentication_rejected method={} path={} reason={}",
+                    request.getMethod(), request.getServletPath(), reason);
             SecurityContextHolder.clearContext();
             filterChain.doFilter(request, response);
             return;

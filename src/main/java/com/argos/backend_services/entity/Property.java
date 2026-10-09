@@ -2,6 +2,8 @@ package com.argos.backend_services.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,7 +29,8 @@ public class Property {
     @Column(nullable = false, length = 120)
     private String name;
 
-    @Column(length = 14, columnDefinition = "char(14)")
+    @Column(length = 14)
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String cnpj;
 
     @Column(nullable = false, length = 255)
@@ -36,7 +39,8 @@ public class Property {
     @Column(nullable = false, length = 100)
     private String city;
 
-    @Column(nullable = false, length = 2, columnDefinition = "char(2)")
+    @Column(nullable = false, length = 2)
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String state;
 
     @Column(name = "area_hectares", precision = 10, scale = 2)

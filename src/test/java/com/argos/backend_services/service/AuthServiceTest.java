@@ -29,6 +29,8 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
 @ExtendWith(OutputCaptureExtension.class)
@@ -92,7 +94,7 @@ class AuthServiceTest {
         FirebaseAuth firebaseAuth = mock(FirebaseAuth.class);
         FirebaseToken decodedToken = mock(FirebaseToken.class);
 
-        Permission permission = Permission.builder().code("USER").name("User").build();
+        Permission permission = Permission.builder().code("USER").name("User").active(true).build();
         AppUser user = AppUser.builder()
                 .id(userId)
                 .email(email)
@@ -100,6 +102,7 @@ class AuthServiceTest {
                 .cpf("12345678901")
                 .photoUrl("https://example.com/user.png")
                 .permission(permission)
+                .active(true)
                 .firstLogin(true)
                 .build();
 
@@ -141,6 +144,41 @@ class AuthServiceTest {
             verify(userRepository).findByEmail(email);
             verify(userRepository).save(user);
             verify(propertyRepository).findByUserIdAndActiveTrue(userId);
+        }
+    }
+
+    @Test
+    void shouldRejectInactiveUserBeforeIssuingJwt() throws Exception {
+        assertInactiveAccess(false, true, "Usuário inativo");
+    }
+
+    @Test
+    void shouldRejectInactivePermissionBeforeIssuingJwt() throws Exception {
+        assertInactiveAccess(true, false, "Permissão do usuário inativa");
+    }
+
+    private void assertInactiveAccess(boolean userActive, boolean permissionActive, String expectedMessage)
+            throws Exception {
+        UserRepository users = mock(UserRepository.class);
+        PropertyRepository properties = mock(PropertyRepository.class);
+        JwtService jwt = mock(JwtService.class);
+        FirebaseAuth firebaseAuth = mock(FirebaseAuth.class);
+        FirebaseToken decoded = mock(FirebaseToken.class);
+        when(firebaseAuth.verifyIdToken("firebase-id-token")).thenReturn(decoded);
+        when(decoded.getEmail()).thenReturn("admin@argos.com");
+        AppUser user = AppUser.builder().id(UUID.randomUUID()).email("admin@argos.com")
+                .active(userActive).firstLogin(true)
+                .permission(Permission.builder().code("ADMIN").active(permissionActive).build()).build();
+        when(users.findByEmail("admin@argos.com")).thenReturn(Optional.of(user));
+        AuthService service = new AuthService(users, properties, jwt);
+        try (var firebase = mockStatic(FirebaseAuth.class)) {
+            firebase.when(FirebaseAuth::getInstance).thenReturn(firebaseAuth);
+            UnauthorizedException exception = assertThrows(UnauthorizedException.class,
+                    () -> service.signIn("firebase-id-token"));
+            assertEquals(expectedMessage, exception.getMessage());
+            assertTrue(user.getFirstLogin());
+            verify(users, never()).save(any(AppUser.class));
+            verifyNoInteractions(jwt, properties);
         }
     }
 }

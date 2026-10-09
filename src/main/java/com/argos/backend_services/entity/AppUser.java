@@ -2,6 +2,8 @@ package com.argos.backend_services.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,7 +29,8 @@ public class AppUser {
     @Column(nullable = false, length = 120)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 11, columnDefinition = "char(11)")
+    @Column(nullable = false, unique = true, length = 11)
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String cpf;
 
     @Column(nullable = false, unique = true, length = 120)

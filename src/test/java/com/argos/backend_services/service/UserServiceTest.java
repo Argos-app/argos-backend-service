@@ -2,6 +2,9 @@ package com.argos.backend_services.service;
 
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
+import com.argos.backend_services.entity.AppUser;
+import com.argos.backend_services.entity.Property;
+import com.argos.backend_services.entity.UserProperty;
 import com.argos.backend_services.exception.BadRequestException;
 import com.argos.backend_services.repository.UserRepository;
 import com.argos.backend_services.repository.UserPropertyRepository;
@@ -21,8 +24,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class UserServiceTest {
+    private static final UUID ADMINISTRATOR_ID = UUID.randomUUID();
 
     @Test
     void shouldListUsersPaginatedWithSixItemsPerPage() {
@@ -34,10 +39,6 @@ class UserServiceTest {
                 "12345678901",
                 "user@argos.com",
                 true,
-                "Fazenda Sao Joao",
-                "12345678000190",
-                LocalDate.of(2026, 1, 15),
-                UUID.randomUUID(),
                 UUID.randomUUID()
         );
 
@@ -47,10 +48,18 @@ class UserServiceTest {
         UserPropertyRepository userPropertyRepository = mock(UserPropertyRepository.class);
         PermissionRepository permissionRepository = mock(PermissionRepository.class);
         PropertyRepository propertyRepository = mock(PropertyRepository.class);
-        when(userRepository.findAllLinked(PageRequest.of(0, 6))).thenReturn(page);
+        when(userRepository.findLinkedByAdministrator(ADMINISTRATOR_ID, PageRequest.of(0, 6))).thenReturn(page);
+        Property farm = Property.builder().id(UUID.randomUUID()).name("Fazenda Sao Joao")
+                .cnpj("12345678000190").build();
+        Property secondFarm = Property.builder().id(UUID.randomUUID()).name("Fazenda Vista Alegre").build();
+        AppUser linkedUser = AppUser.builder().id(userId).build();
+        when(userPropertyRepository.findActiveLinksByUsersAndAdministrator(List.of(userId), ADMINISTRATOR_ID))
+                .thenReturn(List.of(
+                        UserProperty.builder().user(linkedUser).property(farm).linkDate(LocalDate.of(2026, 1, 15)).build(),
+                        UserProperty.builder().user(linkedUser).property(secondFarm).linkDate(LocalDate.of(2026, 2, 1)).build()));
 
         UserService userService = new UserService(userRepository, userPropertyRepository, permissionRepository, propertyRepository);
-        PageOut<UserListItemOut> result = userService.listUsers(0, 6);
+        PageOut<UserListItemOut> result = userService.listUsers(0, 6, ADMINISTRATOR_ID);
 
         assertEquals(1, result.data().size());
         assertEquals(0, result.page());
@@ -67,11 +76,13 @@ class UserServiceTest {
         assertEquals("12345678901", resultItem.cpf());
         assertEquals("user@argos.com", resultItem.email());
         assertTrue(resultItem.active());
-        assertEquals("Fazenda Sao Joao", resultItem.farmName());
-        assertEquals("12345678000190", resultItem.cnpj());
-        assertEquals(LocalDate.of(2026, 1, 15), resultItem.linkDate());
+        assertEquals(2, resultItem.properties().size());
+        assertEquals("Fazenda Sao Joao", resultItem.properties().getFirst().name());
+        assertEquals("12345678000190", resultItem.properties().getFirst().cnpj());
+        assertEquals(LocalDate.of(2026, 1, 15), resultItem.properties().getFirst().linkDate());
 
-        verify(userRepository).findAllLinked(eq(PageRequest.of(0, 6)));
+        verify(userRepository).findLinkedByAdministrator(eq(ADMINISTRATOR_ID), eq(PageRequest.of(0, 6)));
+        verify(userPropertyRepository).findActiveLinksByUsersAndAdministrator(List.of(userId), ADMINISTRATOR_ID);
     }
 
     @Test
@@ -80,6 +91,18 @@ class UserServiceTest {
         UserService userService = new UserService(userRepository, mock(UserPropertyRepository.class),
                 mock(PermissionRepository.class), mock(PropertyRepository.class));
 
-        assertThrows(BadRequestException.class, () -> userService.listUsers(-1, 6));
+        assertThrows(BadRequestException.class, () -> userService.listUsers(-1, 6, ADMINISTRATOR_ID));
+    }
+
+    @Test
+    void shouldNotFetchLinksForEmptyUserPage() {
+        UserRepository users = mock(UserRepository.class);
+        UserPropertyRepository links = mock(UserPropertyRepository.class);
+        when(users.findLinkedByAdministrator(ADMINISTRATOR_ID, PageRequest.of(0, 6)))
+                .thenReturn(Page.empty(PageRequest.of(0, 6)));
+        UserService service = new UserService(users, links, mock(PermissionRepository.class), mock(PropertyRepository.class));
+
+        assertTrue(service.listUsers(0, 6, ADMINISTRATOR_ID).data().isEmpty());
+        verifyNoInteractions(links);
     }
 }

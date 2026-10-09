@@ -11,8 +11,17 @@ import java.util.UUID;
 
 public interface ApplicationAnimalRepository extends JpaRepository<ApplicationAnimal, UUID> {
 
-    List<ApplicationAnimal> findByAnimalExceptionId (AnimalException animalExceptionId);
+    @EntityGraph(attributePaths = {
+            "applicationId", "applicationId.medicineBatchId", "applicationId.medicineBatchId.medicineId"
+    })
+    List<ApplicationAnimal> findByAnimalExceptionId(AnimalException animalExceptionId);
+
+    @EntityGraph(attributePaths = {
+            "applicationId", "applicationId.medicineBatchId", "applicationId.medicineBatchId.medicineId"
+    })
+    List<ApplicationAnimal> findByAnimalExceptionIdIn(List<AnimalException> animalExceptions);
 
     @EntityGraph(attributePaths = "animalExceptionId")
     List<ApplicationAnimal> findByApplicationId(Application applicationId);
+
 }

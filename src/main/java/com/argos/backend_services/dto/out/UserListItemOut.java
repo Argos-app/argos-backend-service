@@ -1,6 +1,6 @@
 package com.argos.backend_services.dto.out;
 
-import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public record UserListItemOut(
@@ -10,10 +10,11 @@ public record UserListItemOut(
         String cpf,
         String email,
         Boolean active,
-        String farmName,
-        String cnpj,
-        LocalDate linkDate,
-        UUID propertyId,
-        UUID permissionId
+        UUID permissionId,
+        List<UserPropertyOut> properties
 ) {
+    public UserListItemOut(UUID userId, String photoUrl, String name, String cpf, String email,
+                           Boolean active, UUID permissionId) {
+        this(userId, photoUrl, name, cpf, email, active, permissionId, List.of());
+    }
 }

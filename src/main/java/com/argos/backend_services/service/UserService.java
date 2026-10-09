@@ -7,6 +7,7 @@ import com.argos.backend_services.dto.in.UpdateUserStatusIn;
 import com.argos.backend_services.dto.out.CreateUserOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
+import com.argos.backend_services.dto.out.UserPropertyOut;
 import com.argos.backend_services.dto.out.UserAccessOut;
 import com.argos.backend_services.dto.out.UserCreationOptionsOut;
 import com.argos.backend_services.dto.out.UserOptionOut;
@@ -22,7 +23,6 @@ import com.argos.backend_services.repository.PermissionRepository;
 import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.repository.UserPropertyRepository;
 import com.argos.backend_services.repository.UserRepository;
-import com.argos.backend_services.utils.PageableUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthErrorCode;
 import com.google.firebase.auth.FirebaseAuthException;
@@ -32,15 +32,18 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.List;
 import java.util.Objects;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -53,8 +56,8 @@ public class UserService {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class);
 
     @Transactional(Transactional.TxType.SUPPORTS)
-    public UserCreationOptionsOut getCreationOptions() {
-        List<UserOptionOut> properties = propertyRepository.findByActiveOrderByNameAsc(true).stream()
+    public UserCreationOptionsOut getCreationOptions(UUID administratorId) {
+        List<UserOptionOut> properties = propertyRepository.findByUser_IdAndActiveTrueOrderByNameAsc(administratorId).stream()
                 .map(property -> new UserOptionOut(property.getId(), property.getName()))
                 .toList();
         List<UserOptionOut> permissions = permissionRepository.findByActiveOrderByNameAsc(true).stream()
@@ -71,17 +74,18 @@ public class UserService {
     }
 
     @Transactional(Transactional.TxType.SUPPORTS)
-    public PageOut<UserAccessOut> listUserAccesses(int page, int size) {
-        Page<UserAccessOut> result = userRepository.findAllUserAccesses(
-                PageableUtils.createPageRequest(page, size, Sort.unsorted()));
+    public PageOut<UserAccessOut> listUserAccesses(int page, int size, UUID administratorId) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new BadRequestException("Parâmetros de paginação inválidos");
+        }
+        Page<UserAccessOut> result = userRepository.findUserAccessesByAdministrator(administratorId, PageRequest.of(page, size));
         return new PageOut<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(),
                 result.getTotalPages(), result.isFirst(), result.isLast());
     }
 
     @Transactional
-    public void updateAccess(UUID userId, UpdateUserAccessIn data) {
-        AppUser user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+    public void updateAccess(UUID userId, UpdateUserAccessIn data, UUID administratorId) {
+        AppUser user = findExclusiveUser(userId, administratorId);
         Permission permission = permissionRepository.findById(data.permissionId())
                 .filter(candidate -> Boolean.TRUE.equals(candidate.getActive()))
                 .orElseThrow(() -> new NotFoundException("Permissão não encontrada ou inativa"));
@@ -90,39 +94,42 @@ public class UserService {
     }
 
     @Transactional
-    public void updateStatus(UUID userId, UpdateUserStatusIn data) {
-        AppUser user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+    public void updateStatus(UUID userId, UpdateUserStatusIn data, UUID administratorId) {
+        AppUser user = findExclusiveUser(userId, administratorId);
         user.setActive(data.active());
         userRepository.saveAndFlush(user);
     }
 
     @Transactional(Transactional.TxType.SUPPORTS)
-    public PageOut<AdminUserOptionOut> listAdministrators(int page, int size) {
+    public PageOut<AdminUserOptionOut> listAdministrators(int page, int size, UUID administratorId) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new BadRequestException("Parâmetros de paginação inválidos");
+        }
         Page<AdminUserOptionOut> result = userRepository
-                .findByActiveTrueAndPermission_ActiveTrueAndPermission_CodeOrderByNameAsc(
-                        "ADMIN", PageableUtils.createPageRequest(page, size, Sort.unsorted()))
+                .findByIdAndActiveTrueAndPermission_ActiveTrueAndPermission_Code(
+                        administratorId, "ADMIN", PageRequest.of(page, size))
                 .map(AdminUserOptionOut::from);
         return new PageOut<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(),
                 result.getTotalPages(), result.isFirst(), result.isLast());
     }
 
     @Transactional
-    public void delete(String userId) {
-        AppUser user = userRepository.findById(UUID.fromString(userId))
+    public void delete(String userId, UUID administratorId) {
+        AppUser user = userRepository.findManagedUserById(UUID.fromString(userId), administratorId)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
-
-        UserProperty userProperty = user.getProperties().stream()
-                .filter(UserProperty::getActive)
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Usuário não está vinculado a nenhuma propriedade"));
-
-        user.setActive(false);
-        userProperty.setActive(false);
+        user.getProperties().stream()
+                .filter(link -> Boolean.TRUE.equals(link.getActive()))
+                .filter(link -> Boolean.TRUE.equals(link.getProperty().getActive()))
+                .filter(link -> link.getProperty().getUser().getId().equals(administratorId))
+                .forEach(link -> {
+                    link.setActive(false);
+                    link.setUnlinkDate(LocalDate.now());
+                });
     }
 
     @Transactional
-    public CreateUserOut create(CreateUserIn data) {
+    public CreateUserOut create(CreateUserIn data, UUID administratorId) {
+        Property property = findManagedProperty(data.propertyId(), administratorId);
         String email = data.email().trim().toLowerCase(Locale.ROOT);
         String cpf = data.cpf().trim();
         if (userRepository.findByEmail(email).isPresent()) {
@@ -135,9 +142,6 @@ public class UserService {
         Permission permission = permissionRepository.findById(data.permissionId())
                 .filter(Permission::getActive)
                 .orElseThrow(() -> new NotFoundException("Permissão não encontrada ou inativa"));
-        Property property = propertyRepository.findById(data.propertyId())
-                .filter(Property::getActive)
-                .orElseThrow(() -> new NotFoundException("Propriedade não encontrada ou inativa"));
 
         String firebaseUid;
         try {
@@ -184,9 +188,10 @@ public class UserService {
     }
 
     @Transactional
-    public void update(UUID userId, UpdateUserIn data) {
-        AppUser user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+    public void update(UUID userId, UpdateUserIn data, UUID administratorId) {
+        findManagedProperty(data.currentPropertyId(), administratorId);
+        Property targetProperty = findManagedProperty(data.propertyId(), administratorId);
+        AppUser user = findExclusiveUser(userId, administratorId);
         String previousEmail = user.getEmail();
         String email = data.email().trim().toLowerCase(Locale.ROOT);
         String name = data.name().trim();
@@ -202,9 +207,6 @@ public class UserService {
         Permission permission = permissionRepository.findById(data.permissionId())
                 .filter(Permission::getActive)
                 .orElseThrow(() -> new NotFoundException("Permissão não encontrada ou inativa"));
-        Property targetProperty = propertyRepository.findById(data.propertyId())
-                .filter(Property::getActive)
-                .orElseThrow(() -> new NotFoundException("Propriedade não encontrada ou inativa"));
         UserProperty currentLink = user.getProperties().stream()
                 .filter(UserProperty::getActive)
                 .filter(link -> link.getProperty().getId().equals(data.currentPropertyId()))
@@ -265,12 +267,30 @@ public class UserService {
         }
     }
 
-    public PageOut<UserListItemOut> listUsers(int page, int size) {
-        Page<UserListItemOut> result = userRepository.findAllLinked(
-                PageableUtils.createPageRequest(page, size, Sort.unsorted()));
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public PageOut<UserListItemOut> listUsers(int page, int size, UUID administratorId) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new BadRequestException("Parâmetros de paginação inválidos");
+        }
+
+        Page<UserListItemOut> result = userRepository.findLinkedByAdministrator(administratorId, PageRequest.of(page, size));
+
+        Map<UUID, List<UserPropertyOut>> propertiesByUser = result.isEmpty() ? Map.of()
+                : userPropertyRepository.findActiveLinksByUsersAndAdministrator(
+                        result.getContent().stream().map(UserListItemOut::userId).toList(), administratorId)
+                .stream().collect(Collectors.groupingBy(link -> link.getUser().getId(),
+                        Collectors.mapping(link -> new UserPropertyOut(link.getProperty().getId(),
+                                link.getProperty().getName(),
+                                link.getProperty().getCnpj() == null ? null : link.getProperty().getCnpj().trim(),
+                                link.getLinkDate()), Collectors.toList())));
+        List<UserListItemOut> items = result.getContent().stream()
+                .map(user -> new UserListItemOut(user.userId(), user.photoUrl(), user.name(), user.cpf(),
+                        user.email(), user.active(), user.permissionId(),
+                        propertiesByUser.getOrDefault(user.userId(), List.of())))
+                .toList();
 
         return new PageOut<>(
-                result.getContent(),
+                items,
                 result.getNumber(),
                 result.getSize(),
                 result.getTotalElements(),
@@ -278,5 +298,23 @@ public class UserService {
                 result.isFirst(),
                 result.isLast()
         );
+    }
+
+    private Property findManagedProperty(UUID propertyId, UUID administratorId) {
+        return propertyRepository.findByIdAndUser_Id(propertyId, administratorId)
+                .filter(property -> Boolean.TRUE.equals(property.getActive()))
+                .orElseThrow(() -> new NotFoundException("Propriedade não encontrada ou inativa"));
+    }
+
+    private AppUser findExclusiveUser(UUID userId, UUID administratorId) {
+        AppUser user = userRepository.findManagedUserById(userId, administratorId)
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+        boolean shared = user.getProperties().stream()
+                .anyMatch(link -> !link.getProperty().getUser().getId().equals(administratorId));
+        if (shared || (!userId.equals(administratorId) && propertyRepository.existsByUser_Id(userId))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "A conta possui vínculos fora da sua responsabilidade e não pode ser alterada");
+        }
+        return user;
     }
 }

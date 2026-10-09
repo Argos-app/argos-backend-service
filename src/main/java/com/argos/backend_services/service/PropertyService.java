@@ -13,10 +13,10 @@ import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.repository.UserPropertyRepository;
 import com.argos.backend_services.repository.UserRepository;
-import com.argos.backend_services.utils.PageableUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -28,15 +28,21 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional
 public class PropertyService {
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
     private final UserPropertyRepository userPropertyRepository;
 
     @Transactional(Transactional.TxType.SUPPORTS)
-    public PageOut<PropertyOut> listActive(int page, int size) {
+    public PageOut<PropertyOut> listActive(int page, int size, UUID administratorId) {
+        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
+            throw new BadRequestException("Parâmetros de paginação inválidos");
+        }
+
         Page<PropertyOut> result = propertyRepository
-                .findByActive(PageableUtils.createPageRequest(
-                        page, size, Sort.by("name").ascending().and(Sort.by("id"))), true)
+                .findByUser_IdAndActiveTrue(administratorId,
+                        PageRequest.of(page, size, Sort.by("name").ascending().and(Sort.by("id"))))
                 .map(PropertyOut::from);
 
         return new PageOut<>(
@@ -50,8 +56,9 @@ public class PropertyService {
         );
     }
 
-    public PropertyOut create(PropertyIn input) {
-        AppUser responsible = findActiveAdministrator(input.responsibleAdminId());
+    public PropertyOut create(PropertyIn input, UUID administratorId) {
+        validateResponsible(input.responsibleAdminId(), administratorId);
+        AppUser responsible = findActiveAdministrator(administratorId);
         Property property = Property.builder()
                 .user(responsible)
                 .name(input.name().trim())
@@ -69,28 +76,24 @@ public class PropertyService {
         return PropertyOut.from(saved);
     }
 
-    public void update(UUID propertyId, PropertyIn input) {
-        Property property = findProperty(propertyId);
-        AppUser previousResponsible = property.getUser();
-        AppUser newResponsible = findActiveAdministrator(input.responsibleAdminId());
+    public void update(UUID propertyId, PropertyIn input, UUID administratorId) {
+        Property property = findProperty(propertyId, administratorId);
+        validateResponsible(input.responsibleAdminId(), administratorId);
+        AppUser responsible = findActiveAdministrator(administratorId);
 
         property.setName(input.name().trim());
-        property.setCnpj(input.cnpj().trim());
+        property.setCnpj(input.cnpj() == null ? null : input.cnpj().trim());
         property.setAddress(input.address().trim());
         property.setCity(input.city().trim());
         property.setState(input.state().trim().toUpperCase());
         property.setAreaHectares(input.areaHectares());
         property.setPhone(input.phone());
 
-        if (!previousResponsible.getId().equals(newResponsible.getId())) {
-            deactivateLink(previousResponsible, property);
-            property.setUser(newResponsible);
-        }
-        activateLink(newResponsible, property);
+        activateLink(responsible, property);
     }
 
-    public void deactivate(UUID propertyId) {
-        Property property = findProperty(propertyId);
+    public void deactivate(UUID propertyId, UUID administratorId) {
+        Property property = findProperty(propertyId, administratorId);
         if (!property.getActive()) return;
 
         property.setActive(false);
@@ -113,8 +116,8 @@ public class PropertyService {
         return user;
     }
 
-    private Property findProperty(UUID propertyId) {
-        return propertyRepository.findById(propertyId)
+    private Property findProperty(UUID propertyId, UUID administratorId) {
+        return propertyRepository.findByIdAndUser_Id(propertyId, administratorId)
                 .orElseThrow(() -> new NotFoundException("Propriedade não encontrada"));
     }
 
@@ -134,12 +137,9 @@ public class PropertyService {
         userPropertyRepository.save(link);
     }
 
-    private void deactivateLink(AppUser user, Property property) {
-        userPropertyRepository.findById(new UserPropertyId(user.getId(), property.getId()))
-                .filter(link -> Boolean.TRUE.equals(link.getActive()))
-                .ifPresent(link -> {
-                    link.setActive(false);
-                    link.setUnlinkDate(LocalDate.now());
-                });
+    private void validateResponsible(UUID responsibleId, UUID administratorId) {
+        if (!administratorId.equals(responsibleId)) {
+            throw new NotFoundException("Administrador responsável não encontrado");
+        }
     }
 }

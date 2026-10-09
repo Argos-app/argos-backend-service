@@ -61,6 +61,15 @@ public class AuthService {
 
         AppUser appUser = appUserOptional.get();
 
+        if (!Boolean.TRUE.equals(appUser.getActive())) {
+            log.warn("signin_rejected reason=user_inactive");
+            throw new UnauthorizedException("Usuário inativo");
+        }
+        if (!Boolean.TRUE.equals(appUser.getPermission().getActive())) {
+            log.warn("signin_rejected reason=permission_inactive");
+            throw new UnauthorizedException("Permissão do usuário inativa");
+        }
+
         boolean isFirstAccess = appUser.getFirstLogin();
         if (isFirstAccess) {
             appUser.setFirstLogin(false);

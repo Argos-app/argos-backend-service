@@ -11,7 +11,11 @@ import com.argos.backend_services.service.ApplicationWithdrawalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,26 +24,25 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/application")
 @RequiredArgsConstructor
-public class ApplicationController {
+public class ApplicationController implements ApplicationControllerApi {
 
     private final ApplicationService service;
     private final ApplicationWithdrawalService withdrawalService;
 
-    @PostMapping
-    public ResponseEntity<Void> createApplication(
-            @RequestHeader UUID userId,
-            @RequestBody @Valid ApplicationIn applicationIn) throws LotNotFoundException, MedicineNotFoundException {
+    @Override
+    public ResponseEntity<Void> createApplication(@RequestHeader UUID userId,
+                                                 @RequestBody @Valid ApplicationIn applicationIn) throws LotNotFoundException, MedicineNotFoundException {
 
         service.registerApplication(applicationIn, userId);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping({"/list-all"})
+    @Override
     public ResponseEntity<List<ApplicationOut>> listAll() {
         return ResponseEntity.ok(service.listApplication());
     }
 
-    @GetMapping("/withdrawal-window")
+    @Override
     public ResponseEntity<List<ApplicationWithdrawalOut>> withdrawalWindow(
             @RequestParam(required = false) LocalDate referenceDate,
             @RequestParam(defaultValue = "7") int daysBefore,

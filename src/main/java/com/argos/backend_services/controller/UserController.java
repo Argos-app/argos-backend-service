@@ -1,71 +1,95 @@
 package com.argos.backend_services.controller;
 
-import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.in.CreateUserIn;
+import com.argos.backend_services.dto.in.UpdateUserAccessIn;
 import com.argos.backend_services.dto.in.UpdateUserIn;
+import com.argos.backend_services.dto.in.UpdateUserStatusIn;
+import com.argos.backend_services.dto.out.AdminUserOptionOut;
 import com.argos.backend_services.dto.out.CreateUserOut;
-import com.argos.backend_services.dto.out.UserListItemOut;
+import com.argos.backend_services.dto.out.PageOut;
+import com.argos.backend_services.dto.out.UserAccessOut;
 import com.argos.backend_services.dto.out.UserCreationOptionsOut;
+import com.argos.backend_services.dto.out.UserListItemOut;
+import com.argos.backend_services.dto.out.UserOptionOut;
 import com.argos.backend_services.service.UserService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
-@Tag(name = "Users", description = "Rotas de gestão de usuários")
-public class UserController {
+public class UserController implements UserControllerApi {
     private final UserService userService;
 
-    @GetMapping("/options")
+    @Override
     @PreAuthorize("hasAuthority('ADMIN')")
-    @Operation(summary = "Lista opções para criação de usuário")
     public ResponseEntity<UserCreationOptionsOut> getCreationOptions() {
         return ResponseEntity.ok(userService.getCreationOptions());
     }
 
-    @PostMapping
+    @Override
     @PreAuthorize("hasAuthority('ADMIN')")
-    @Operation(summary = "Cria um usuário", description = "Cria usuário no Firebase e o vincula a uma propriedade")
+    public ResponseEntity<List<UserOptionOut>> listPermissions() {
+        return ResponseEntity.ok(userService.getActivePermissions());
+    }
+
+    @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<PageOut<UserAccessOut>> listAccesses(@RequestParam(defaultValue = "0") int page,
+                                                               @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(userService.listUserAccesses(page, size));
+    }
+
+    @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Void> updateAccess(@PathVariable UUID userId, @Valid @RequestBody UpdateUserAccessIn data) {
+        userService.updateAccess(userId, data);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Void> updateStatus(@PathVariable UUID userId, @Valid @RequestBody UpdateUserStatusIn data) {
+        userService.updateStatus(userId, data);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<PageOut<AdminUserOptionOut>> listAdministrators(@RequestParam(defaultValue = "0") int page,
+                                                                          @RequestParam(defaultValue = "6") int size) {
+        return ResponseEntity.ok(userService.listAdministrators(page, size));
+    }
+
+    @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<CreateUserOut> createUser(@Valid @RequestBody CreateUserIn data) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.create(data));
     }
 
-    @PutMapping("/{userId}")
+    @Override
     @PreAuthorize("hasAuthority('ADMIN')")
-    @Operation(summary = "Atualiza os dados e o vínculo de um usuário")
-    public ResponseEntity<Void> updateUser(
-            @PathVariable java.util.UUID userId,
-            @Valid @RequestBody UpdateUserIn data) {
+    public ResponseEntity<Void> updateUser(@PathVariable UUID userId, @Valid @RequestBody UpdateUserIn data) {
         userService.update(userId, data);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping
+    @Override
     @PreAuthorize("hasAuthority('ADMIN')")
-    @Operation(
-            summary = "Lista usuários vinculados a fazendas",
-            description = "Retorna os usuários com dados de perfil e vínculo à fazenda, paginado com 6 usuários por página"
-    )
-    public ResponseEntity<PageOut<UserListItemOut>> list(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "6") int size
-    ) {
+    public ResponseEntity<PageOut<UserListItemOut>> list(@RequestParam(defaultValue = "0") int page,
+                                                        @RequestParam(defaultValue = "6") int size) {
         return ResponseEntity.ok(userService.listUsers(page, size));
     }
 
-    @DeleteMapping("/{userId}")
+    @Override
     @PreAuthorize("hasAuthority('ADMIN')")
-    @Operation(
-            summary = "Remove um usuário",
-            description = "Remove um usuário do sistema, desativando seu acesso"
-    )
     public ResponseEntity<Void> deleteUser(@PathVariable String userId) {
         userService.delete(userId);
         return ResponseEntity.noContent().build();

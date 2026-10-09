@@ -2,11 +2,15 @@ package com.argos.backend_services.service;
 
 import com.argos.backend_services.dto.in.CreateUserIn;
 import com.argos.backend_services.dto.in.UpdateUserIn;
+import com.argos.backend_services.dto.in.UpdateUserAccessIn;
+import com.argos.backend_services.dto.in.UpdateUserStatusIn;
 import com.argos.backend_services.dto.out.CreateUserOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
+import com.argos.backend_services.dto.out.UserAccessOut;
 import com.argos.backend_services.dto.out.UserCreationOptionsOut;
 import com.argos.backend_services.dto.out.UserOptionOut;
+import com.argos.backend_services.dto.out.AdminUserOptionOut;
 import com.argos.backend_services.exception.ArgosInternalServerException;
 import com.argos.backend_services.entity.AppUser;
 import com.argos.backend_services.entity.Permission;
@@ -49,13 +53,62 @@ public class UserService {
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public UserCreationOptionsOut getCreationOptions() {
-        List<UserOptionOut> properties = propertyRepository.findByActiveTrueOrderByNameAsc().stream()
+        List<UserOptionOut> properties = propertyRepository.findByActiveOrderByNameAsc(true).stream()
                 .map(property -> new UserOptionOut(property.getId(), property.getName()))
                 .toList();
-        List<UserOptionOut> permissions = permissionRepository.findByActiveTrueOrderByNameAsc().stream()
+        List<UserOptionOut> permissions = permissionRepository.findByActiveOrderByNameAsc(true).stream()
                 .map(permission -> new UserOptionOut(permission.getId(), permission.getName()))
                 .toList();
         return new UserCreationOptionsOut(properties, permissions);
+    }
+
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public List<UserOptionOut> getActivePermissions() {
+        return permissionRepository.findByActiveOrderByNameAsc(true).stream()
+                .map(permission -> new UserOptionOut(permission.getId(), permission.getName()))
+                .toList();
+    }
+
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public PageOut<UserAccessOut> listUserAccesses(int page, int size) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new BadRequestException("Parâmetros de paginação inválidos");
+        }
+        Page<UserAccessOut> result = userRepository.findAllUserAccesses(PageRequest.of(page, size));
+        return new PageOut<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(),
+                result.getTotalPages(), result.isFirst(), result.isLast());
+    }
+
+    @Transactional
+    public void updateAccess(UUID userId, UpdateUserAccessIn data) {
+        AppUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+        Permission permission = permissionRepository.findById(data.permissionId())
+                .filter(candidate -> Boolean.TRUE.equals(candidate.getActive()))
+                .orElseThrow(() -> new NotFoundException("Permissão não encontrada ou inativa"));
+        user.setPermission(permission);
+        userRepository.saveAndFlush(user);
+    }
+
+    @Transactional
+    public void updateStatus(UUID userId, UpdateUserStatusIn data) {
+        AppUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+        user.setActive(data.active());
+        userRepository.saveAndFlush(user);
+    }
+
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public PageOut<AdminUserOptionOut> listAdministrators(int page, int size) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new BadRequestException("Parâmetros de paginação inválidos");
+        }
+        Page<AdminUserOptionOut> result = userRepository
+                .findByActiveTrueAndPermission_ActiveTrueAndPermission_CodeOrderByNameAsc(
+                        "ADMIN", PageRequest.of(page, size))
+                .map(AdminUserOptionOut::from);
+        return new PageOut<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(),
+                result.getTotalPages(), result.isFirst(), result.isLast());
     }
 
     @Transactional

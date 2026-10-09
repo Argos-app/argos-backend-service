@@ -7,5 +7,5 @@ import java.util.UUID;
 import java.util.List;
 
 public interface PermissionRepository extends JpaRepository<Permission, UUID> {
-    List<Permission> findByActiveTrueOrderByNameAsc();
+    List<Permission> findByActiveOrderByNameAsc(boolean active);
 }

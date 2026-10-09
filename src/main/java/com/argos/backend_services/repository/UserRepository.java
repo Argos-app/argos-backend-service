@@ -4,7 +4,6 @@ import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.dto.out.UserAccessOut;
 import com.argos.backend_services.dto.out.CurrentUserAccessOut;
 import com.argos.backend_services.entity.AppUser;
-import com.argos.backend_services.entity.UserProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,9 +28,15 @@ public interface UserRepository extends JpaRepository<AppUser, UUID> {
             )
             from AppUser u
             join u.permission permission
+            where exists (
+                select up.user.id from UserProperty up
+                where up.user = u and up.active = true and up.property.active = true
+                  and up.property.user.id = :administratorId
+            )
             order by u.name asc, u.id asc
             """)
-    Page<UserAccessOut> findAllUserAccesses(Pageable pageable);
+    Page<UserAccessOut> findUserAccessesByAdministrator(@Param("administratorId") UUID administratorId,
+                                                       Pageable pageable);
 
     @Query("""
             select u.active as userActive,
@@ -43,8 +48,19 @@ public interface UserRepository extends JpaRepository<AppUser, UUID> {
             """)
     Optional<CurrentUserAccessOut> findCurrentAccessById(@Param("userId") UUID userId);
 
-    Page<AppUser> findByActiveTrueAndPermission_ActiveTrueAndPermission_CodeOrderByNameAsc(
-            String permissionCode, Pageable pageable);
+    Page<AppUser> findByIdAndActiveTrueAndPermission_ActiveTrueAndPermission_Code(
+            UUID id, String permissionCode, Pageable pageable);
+
+    @Query("""
+            select u from AppUser u
+            where u.id = :userId and exists (
+                select up.user.id from UserProperty up
+                where up.user = u and up.active = true and up.property.active = true
+                  and up.property.user.id = :administratorId
+            )
+            """)
+    Optional<AppUser> findManagedUserById(@Param("userId") UUID userId,
+                                         @Param("administratorId") UUID administratorId);
 
     @Query("""
             select new com.argos.backend_services.dto.out.UserListItemOut(
@@ -54,18 +70,17 @@ public interface UserRepository extends JpaRepository<AppUser, UUID> {
                 u.cpf,
                 u.email,
                 u.active,
-                p.name,
-                p.cnpj,
-                up.linkDate,
-                p.id,
                 u.permission.id
             )
-            from UserProperty up
-            inner join up.user u
-            inner join up.property p
-            where up.active = true
-            order by u.name asc, up.linkDate desc
+            from AppUser u
+            where exists (
+                select up.user.id from UserProperty up
+                where up.user = u and up.active = true and up.property.active = true
+                  and up.property.user.id = :administratorId
+            )
+            order by u.name asc, u.id asc
             """)
-    Page<UserListItemOut> findAllLinked(Pageable pageable);
+    Page<UserListItemOut> findLinkedByAdministrator(@Param("administratorId") UUID administratorId,
+                                                    Pageable pageable);
 
 }

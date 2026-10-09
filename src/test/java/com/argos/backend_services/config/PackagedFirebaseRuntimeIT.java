@@ -1,6 +1,7 @@
 package com.argos.backend_services.config;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.net.URL;
@@ -16,9 +17,13 @@ class PackagedFirebaseRuntimeIT {
 
     @Test
     void shouldFetchFirebaseCertificatesUsingOnlyPackagedDependencies() throws Exception {
+        Path packagedApplication = Path.of("target/app.jar");
+        Assumptions.assumeTrue(Files.exists(packagedApplication),
+                "target/app.jar is generated only by the package phase");
+
         var classpath = new ArrayList<URL>();
         classpath.add(Path.of("target/test-classes").toUri().toURL());
-        try (var jar = new ZipFile("target/app.jar")) {
+        try (var jar = new ZipFile(packagedApplication.toFile())) {
             var entries = jar.entries();
             while (entries.hasMoreElements()) {
                 var entry = entries.nextElement();

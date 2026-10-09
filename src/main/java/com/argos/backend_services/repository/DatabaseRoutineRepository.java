@@ -30,6 +30,20 @@ public interface DatabaseRoutineRepository extends Repository<Application, UUID>
             @Param("p_peso") BigDecimal peso
     );
 
+    @Procedure(procedureName = "sp_registrar_aplicacao_animal")
+    void registerAnimalApplication(
+            @Param("p_animal_exception_id") UUID animalExceptionId,
+            @Param("p_medicine_batch_id") UUID medicineBatchId,
+            @Param("p_user_id") UUID userId,
+            @Param("p_dose") BigDecimal dose,
+            @Param("p_unit") String unit,
+            @Param("p_route") String route,
+            @Param("p_goal") String goal
+    );
+
+    @Procedure(procedureName = "sp_retornar_excecao")
+    void returnException(@Param("p_animal_id") UUID animalExceptionId);
+
     @Query(value = "select fn_data_fim_carencia(:medicineId, :date)", nativeQuery = true)
     LocalDate calculateSlaughterDate(
             @Param("medicineId") UUID medicineId,

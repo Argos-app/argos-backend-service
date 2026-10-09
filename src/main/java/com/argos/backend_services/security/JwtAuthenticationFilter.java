@@ -1,6 +1,7 @@
 package com.argos.backend_services.security;
 
 import com.argos.backend_services.service.JwtService;
+import com.argos.backend_services.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,6 +24,7 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserRepository userRepository;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -51,10 +53,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         Claims claims = jwtService.extractClaims(token);
-        String permission = claims.get("permission", String.class);
+        UUID userId = UUID.fromString(claims.getSubject());
+        var currentAccess = userRepository.findCurrentAccessById(userId);
+        if (currentAccess.isEmpty()
+                || !Boolean.TRUE.equals(currentAccess.get().getUserActive())
+                || !Boolean.TRUE.equals(currentAccess.get().getPermissionActive())) {
+            SecurityContextHolder.clearContext();
+            filterChain.doFilter(request, response);
+            return;
+        }
+        String permission = currentAccess.get().getPermissionCode();
         String propertyId = claims.get("propertyId", String.class);
         CurrentUserData currentUser = new CurrentUserData(
-                UUID.fromString(claims.getSubject()),
+                userId,
                 claims.get("email", String.class),
                 claims.get("name", String.class),
                 permission,

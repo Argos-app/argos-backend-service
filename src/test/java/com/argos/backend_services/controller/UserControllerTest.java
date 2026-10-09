@@ -8,6 +8,7 @@ import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.exception.BadRequestException;
 import com.argos.backend_services.service.JwtService;
 import com.argos.backend_services.service.UserService;
+import com.argos.backend_services.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -46,6 +47,9 @@ public class UserControllerTest {
 
     @MockBean
     private JwtService jwtService;
+
+    @MockBean
+    private UserRepository userRepository;
 
     @Test
     void shouldCreateUserForAdmin() throws Exception {

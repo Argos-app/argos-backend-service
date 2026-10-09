@@ -18,6 +18,7 @@ import com.argos.backend_services.repository.PermissionRepository;
 import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.repository.UserPropertyRepository;
 import com.argos.backend_services.repository.UserRepository;
+import com.argos.backend_services.utils.PageableUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthErrorCode;
 import com.google.firebase.auth.FirebaseAuthException;
@@ -27,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -217,11 +218,8 @@ public class UserService {
     }
 
     public PageOut<UserListItemOut> listUsers(int page, int size) {
-        if (page < 0) {
-            throw new BadRequestException("Página não pode ser negativa");
-        }
-
-        Page<UserListItemOut> result = userRepository.findAllLinked(PageRequest.of(page, size));
+        Page<UserListItemOut> result = userRepository.findAllLinked(
+                PageableUtils.createPageRequest(page, size, Sort.unsorted()));
 
         return new PageOut<>(
                 result.getContent(),

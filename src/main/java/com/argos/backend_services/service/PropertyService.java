@@ -13,10 +13,10 @@ import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.repository.UserPropertyRepository;
 import com.argos.backend_services.repository.UserRepository;
+import com.argos.backend_services.utils.PageableUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -28,20 +28,15 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional
 public class PropertyService {
-    private static final int MAX_PAGE_SIZE = 100;
-
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
     private final UserPropertyRepository userPropertyRepository;
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public PageOut<PropertyOut> listActive(int page, int size) {
-        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
-            throw new BadRequestException("Parâmetros de paginação inválidos");
-        }
-
         Page<PropertyOut> result = propertyRepository
-                .findByActive(PageRequest.of(page, size, Sort.by("name").ascending().and(Sort.by("id"))), true)
+                .findByActive(PageableUtils.createPageRequest(
+                        page, size, Sort.by("name").ascending().and(Sort.by("id"))), true)
                 .map(PropertyOut::from);
 
         return new PageOut<>(

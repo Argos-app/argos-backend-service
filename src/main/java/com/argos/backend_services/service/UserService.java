@@ -72,10 +72,8 @@ public class UserService {
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public PageOut<UserAccessOut> listUserAccesses(int page, int size) {
-        if (page < 0 || size < 1 || size > 100) {
-            throw new BadRequestException("Parâmetros de paginação inválidos");
-        }
-        Page<UserAccessOut> result = userRepository.findAllUserAccesses(PageRequest.of(page, size));
+        Page<UserAccessOut> result = userRepository.findAllUserAccesses(
+                PageableUtils.createPageRequest(page, size, Sort.unsorted()));
         return new PageOut<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(),
                 result.getTotalPages(), result.isFirst(), result.isLast());
     }
@@ -101,12 +99,9 @@ public class UserService {
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public PageOut<AdminUserOptionOut> listAdministrators(int page, int size) {
-        if (page < 0 || size < 1 || size > 100) {
-            throw new BadRequestException("Parâmetros de paginação inválidos");
-        }
         Page<AdminUserOptionOut> result = userRepository
                 .findByActiveTrueAndPermission_ActiveTrueAndPermission_CodeOrderByNameAsc(
-                        "ADMIN", PageRequest.of(page, size))
+                        "ADMIN", PageableUtils.createPageRequest(page, size, Sort.unsorted()))
                 .map(AdminUserOptionOut::from);
         return new PageOut<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(),
                 result.getTotalPages(), result.isFirst(), result.isLast());

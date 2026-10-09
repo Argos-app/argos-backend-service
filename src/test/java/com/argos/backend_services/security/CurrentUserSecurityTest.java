@@ -5,6 +5,8 @@ import com.argos.backend_services.controller.resolver.CurrentUserArgumentResolve
 import com.argos.backend_services.entity.AppUser;
 import com.argos.backend_services.entity.Permission;
 import com.argos.backend_services.service.JwtService;
+import com.argos.backend_services.repository.UserRepository;
+import com.argos.backend_services.dto.out.CurrentUserAccessOut;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
@@ -19,6 +21,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class CurrentUserSecurityTest {
 
@@ -41,12 +45,19 @@ class CurrentUserSecurityTest {
                 86_400_000
         );
         String token = jwtService.generate(user);
+        UserRepository userRepository = mock(UserRepository.class);
+        CurrentUserAccessOut access = new CurrentUserAccessOut() {
+            public Boolean getUserActive() { return true; }
+            public Boolean getPermissionActive() { return true; }
+            public String getPermissionCode() { return "USER"; }
+        };
+        when(userRepository.findCurrentAccessById(userId)).thenReturn(java.util.Optional.of(access));
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/properties");
         request.setServletPath("/properties");
         request.addHeader("Authorization", "Bearer " + token);
 
-        new JwtAuthenticationFilter(jwtService).doFilter(
+        new JwtAuthenticationFilter(jwtService, userRepository).doFilter(
                 request,
                 new MockHttpServletResponse(),
                 (servletRequest, servletResponse) -> { }

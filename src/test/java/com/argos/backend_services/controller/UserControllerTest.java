@@ -1,6 +1,7 @@
 package com.argos.backend_services.controller;
 
 import com.argos.backend_services.config.SecurityConfig;
+import com.argos.backend_services.controller.impl.UserController;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.in.CreateUserIn;
 import com.argos.backend_services.dto.out.CreateUserOut;

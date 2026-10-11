@@ -1,5 +1,6 @@
-package com.argos.backend_services.controller;
+package com.argos.backend_services.controller.impl;
 
+import com.argos.backend_services.controller.AnimalExceptionControllerApi;
 import com.argos.backend_services.dto.in.AnimalExceptionIn;
 import com.argos.backend_services.dto.out.AnimalExceptionOut;
 import com.argos.backend_services.dto.out.PageOut;

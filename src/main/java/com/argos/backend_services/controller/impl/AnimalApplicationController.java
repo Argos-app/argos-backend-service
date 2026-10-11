@@ -1,5 +1,6 @@
-package com.argos.backend_services.controller;
+package com.argos.backend_services.controller.impl;
 
+import com.argos.backend_services.controller.AnimalApplicationControllerApi;
 import com.argos.backend_services.dto.in.AnimalApplicationIn;
 import com.argos.backend_services.exception.MedicineNotFoundException;
 import com.argos.backend_services.service.AnimalApplicationService;

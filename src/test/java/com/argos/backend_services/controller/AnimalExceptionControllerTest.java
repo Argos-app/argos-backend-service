@@ -1,5 +1,6 @@
 package com.argos.backend_services.controller;
 
+import com.argos.backend_services.controller.impl.AnimalExceptionController;
 import com.argos.backend_services.dto.in.AnimalExceptionIn;
 import com.argos.backend_services.service.AnimalExceptionService;
 import org.junit.jupiter.api.Test;

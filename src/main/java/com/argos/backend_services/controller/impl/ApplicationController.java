@@ -1,5 +1,6 @@
-package com.argos.backend_services.controller;
+package com.argos.backend_services.controller.impl;
 
+import com.argos.backend_services.controller.ApplicationControllerApi;
 import com.argos.backend_services.dto.in.ApplicationIn;
 import com.argos.backend_services.dto.out.ApplicationOut;
 import com.argos.backend_services.dto.out.ApplicationWithdrawalOut;

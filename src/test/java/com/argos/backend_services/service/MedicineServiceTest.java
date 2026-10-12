@@ -6,6 +6,8 @@ import com.argos.backend_services.entity.Medicine;
 import com.argos.backend_services.entity.MedicineBatch;
 import com.argos.backend_services.entity.Supplier;
 import com.argos.backend_services.exception.BadRequestException;
+import com.argos.backend_services.mapper.MedicineMapper;
+import com.argos.backend_services.repository.DatabaseRoutineRepository;
 import com.argos.backend_services.repository.MedicineBatchRepository;
 import com.argos.backend_services.repository.MedicineRepository;
 import com.argos.backend_services.repository.StockMovementRepository;
@@ -36,6 +38,8 @@ class MedicineServiceTest {
     private SupplierRepository supplierRepository;
     private StockMovementRepository stockMovementRepository;
     private UserRepository userRepository;
+    private DatabaseRoutineRepository databaseRoutineRepository;
+    private MedicineMapper medicineMapper;
     private MedicineService service;
     private final Clock clock = Clock.fixed(Instant.parse("2026-10-11T12:00:00Z"), ZoneOffset.UTC);
 
@@ -46,8 +50,10 @@ class MedicineServiceTest {
         supplierRepository = mock(SupplierRepository.class);
         stockMovementRepository = mock(StockMovementRepository.class);
         userRepository = mock(UserRepository.class);
+        databaseRoutineRepository = mock(DatabaseRoutineRepository.class);
+        medicineMapper = mock(MedicineMapper.class);
         service = new MedicineService(medicineRepository, medicineBatchRepository, supplierRepository,
-                stockMovementRepository, userRepository, clock);
+                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock);
     }
 
     @Test
@@ -96,7 +102,7 @@ class MedicineServiceTest {
                 .hasMessageContaining("validade deve ser futura");
 
         verifyNoInteractions(medicineRepository, medicineBatchRepository, supplierRepository,
-                stockMovementRepository, userRepository);
+                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper);
     }
 
     @Test

@@ -1,0 +1,112 @@
+package com.argos.backend_services.service;
+
+import com.argos.backend_services.dto.in.MedicineBatchIn;
+import com.argos.backend_services.dto.out.MedicineCreatedOut;
+import com.argos.backend_services.dto.out.MedicineListItemOut;
+import com.argos.backend_services.dto.out.PageOut;
+import com.argos.backend_services.entity.MedicineBatch;
+import com.argos.backend_services.entity.StockMovement;
+import com.argos.backend_services.entity.Supplier;
+import com.argos.backend_services.exception.BadRequestException;
+import com.argos.backend_services.exception.NotFoundException;
+import com.argos.backend_services.repository.MedicineBatchRepository;
+import com.argos.backend_services.repository.MedicineRepository;
+import com.argos.backend_services.repository.StockMovementRepository;
+import com.argos.backend_services.repository.SupplierRepository;
+import com.argos.backend_services.repository.UserRepository;
+import com.argos.backend_services.utils.PageableUtils;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Clock;
+import java.time.LocalDate;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class MedicineService {
+
+    private final MedicineRepository medicineRepository;
+    private final MedicineBatchRepository medicineBatchRepository;
+    private final SupplierRepository supplierRepository;
+    private final StockMovementRepository stockMovementRepository;
+    private final UserRepository userRepository;
+    private final Clock clock;
+
+    @Transactional
+    public MedicineCreatedOut registerBatch(MedicineBatchIn input, UUID userId) {
+        var today = LocalDate.now(clock);
+        validateDates(input, today);
+
+        var medicine = medicineRepository.findByMapaRegistration(input.productRegistration().trim())
+                .filter(medicineCandidate -> medicineCandidate.isActive())
+                .orElseThrow(() -> new NotFoundException("Medicamento não encontrado para o registro MAPA informado"));
+
+        if (medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber().trim())) {
+            throw new BadRequestException("Já existe um lote com este número para o medicamento informado");
+        }
+
+        var user = userRepository.findById(userId)
+                .filter(userCandidate -> Boolean.TRUE.equals(userCandidate.getActive()))
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado ou inativo"));
+
+        var supplier = findOrCreateSupplier(input);
+        var batch = medicineBatchRepository.saveAndFlush(MedicineBatch.builder()
+                .medicineId(medicine)
+                .supplierId(supplier)
+                .batchNumber(input.batchNumber().trim())
+                .manufactureDate(input.manufactureDate())
+                .expiryDate(input.expiryDate())
+                .deliveryDate(today)
+                .initialQuantity(input.quantity())
+                .status(MedicineBatch.Status.DISPONIVEL)
+                .build());
+
+        stockMovementRepository.save(StockMovement.builder()
+                .medicineBatchId(batch)
+                .userId(user)
+                .type('E')
+                .quantity(input.quantity())
+                .reason("ENTRADA_LOTE")
+                .build());
+
+        return new MedicineCreatedOut(batch.getId(), supplier.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public PageOut<MedicineListItemOut> list(UUID therapeuticCategoryId, int page, int size) {
+        var pageable = PageableUtils.createPageRequest(page, size,
+                Sort.by(Sort.Order.asc("expiryDate"), Sort.Order.asc("batchNumber")));
+        var result = medicineBatchRepository.findAvailableByTherapeuticCategoryId(therapeuticCategoryId, pageable);
+
+        return new PageOut<>(
+                result.getContent(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.isFirst(),
+                result.isLast());
+    }
+
+    private Supplier findOrCreateSupplier(MedicineBatchIn input) {
+        var cnpj = input.supplierCnpj().trim();
+        return supplierRepository.findByCnpj(cnpj)
+                .orElseGet(() -> supplierRepository.save(Supplier.builder()
+                        .companyName(input.supplierName().trim())
+                        .cnpj(cnpj)
+                        .active(true)
+                        .build()));
+    }
+
+    private void validateDates(MedicineBatchIn input, LocalDate today) {
+        if (!input.expiryDate().isAfter(input.manufactureDate())) {
+            throw new BadRequestException("A data de validade deve ser posterior à data de fabricação");
+        }
+        if (!input.expiryDate().isAfter(today)) {
+            throw new BadRequestException("A data de validade deve ser futura");
+        }
+    }
+}

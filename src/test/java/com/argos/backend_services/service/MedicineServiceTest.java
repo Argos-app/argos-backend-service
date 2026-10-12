@@ -69,7 +69,7 @@ class MedicineServiceTest {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.empty());
         when(supplierRepository.save(any(Supplier.class))).thenReturn(supplier);
-        when(medicineBatchRepository.saveAndFlush(any(MedicineBatch.class))).thenAnswer(invocation -> {
+        when(medicineBatchRepository.save(any(MedicineBatch.class))).thenAnswer(invocation -> {
             var batch = invocation.getArgument(0, MedicineBatch.class);
             batch.setId(batchId);
             return batch;
@@ -80,7 +80,7 @@ class MedicineServiceTest {
         assertThat(result.medicineBatchId()).isEqualTo(batchId);
         assertThat(result.supplierId()).isEqualTo(supplier.getId());
         var batchCaptor = ArgumentCaptor.forClass(MedicineBatch.class);
-        verify(medicineBatchRepository).saveAndFlush(batchCaptor.capture());
+        verify(medicineBatchRepository).save(batchCaptor.capture());
         assertThat(batchCaptor.getValue().getMedicineId()).isEqualTo(medicine);
         assertThat(batchCaptor.getValue().getSupplierId()).isEqualTo(supplier);
         assertThat(batchCaptor.getValue().getDeliveryDate()).isEqualTo(LocalDate.of(2026, 10, 11));
@@ -107,16 +107,16 @@ class MedicineServiceTest {
 
     @Test
     void shouldNotCreateSupplierWhenCnpjAlreadyExists() {
-        var medicine = Medicine.builder().id(UUID.randomUUID()).active(true).build();
+        var medicine = Medicine.builder().id(UUID.randomUUID()).active(true).needsPrescription(false).build();
         var user = AppUser.builder().id(UUID.randomUUID()).active(true).build();
-        var supplier = Supplier.builder().id(UUID.randomUUID()).build();
+        var supplier = Supplier.builder().id(UUID.randomUUID()).active(true).build();
         var input = validInput();
 
         when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
         when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.of(supplier));
-        when(medicineBatchRepository.saveAndFlush(any(MedicineBatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(medicineBatchRepository.save(any(MedicineBatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.registerBatch(input, user.getId());
 

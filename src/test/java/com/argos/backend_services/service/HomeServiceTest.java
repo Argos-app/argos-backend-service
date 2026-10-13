@@ -33,6 +33,7 @@ class HomeServiceTest {
     private ApplicationAnimalRepository applicationAnimalRepository;
     private DatabaseRoutineRepository databaseRoutineRepository;
     private HomeApplicationMapper mapper;
+    private PropertyAccessService propertyAccessService;
     private HomeService service;
 
     @BeforeEach
@@ -41,7 +42,9 @@ class HomeServiceTest {
         applicationAnimalRepository = mock(ApplicationAnimalRepository.class);
         databaseRoutineRepository = mock(DatabaseRoutineRepository.class);
         mapper = mock(HomeApplicationMapper.class);
-        service = new HomeService(applicationRepository, applicationAnimalRepository, databaseRoutineRepository, mapper);
+        propertyAccessService = mock(PropertyAccessService.class);
+        service = new HomeService(applicationRepository, applicationAnimalRepository, databaseRoutineRepository, mapper,
+                propertyAccessService);
     }
 
     @Test
@@ -60,9 +63,11 @@ class HomeServiceTest {
         var lotApplication = LotApplicationOut.builder().medicineName("Vacina A").build();
         var animalApplication = AnimalApplicationOut.builder().medicineName("Vacina A").build();
         var referenceDate = LocalDate.now();
+        var propertyIds = List.of(UUID.randomUUID());
 
-        when(applicationRepository.findByUserId_IdAndMeatWithdrawalEndBetween(
-                userId, referenceDate.minusDays(7), referenceDate.plusDays(7)))
+        when(propertyAccessService.activePropertyIds(userId)).thenReturn(propertyIds);
+        when(applicationRepository.findByMeatWithdrawalEndBetweenAndLotId_HerdId_PropertyId_IdIn(
+                referenceDate.minusDays(7), referenceDate.plusDays(7), propertyIds))
                 .thenReturn(List.of(application));
         when(mapper.toLotApplicationOut(application, referenceDate, false)).thenReturn(lotApplication);
         when(applicationAnimalRepository.findByApplicationId(application)).thenReturn(List.of(applicationAnimal));
@@ -84,11 +89,13 @@ class HomeServiceTest {
     @Test
     void shouldWrapRepositoryFailure() {
         // Arrange
-        when(applicationRepository.findByUserId_IdAndMeatWithdrawalEndBetween(any(), any(), any()))
+        var userId = UUID.randomUUID();
+        when(propertyAccessService.activePropertyIds(userId)).thenReturn(List.of(UUID.randomUUID()));
+        when(applicationRepository.findByMeatWithdrawalEndBetweenAndLotId_HerdId_PropertyId_IdIn(any(), any(), any()))
                 .thenThrow(new RuntimeException("database unavailable"));
 
         // Act and Assert
-        assertThatThrownBy(() -> service.findApplicationCalendar(UUID.randomUUID()))
+        assertThatThrownBy(() -> service.findApplicationCalendar(userId))
                 .isInstanceOf(ApplicationWithdrawalRoutineException.class);
     }
 }

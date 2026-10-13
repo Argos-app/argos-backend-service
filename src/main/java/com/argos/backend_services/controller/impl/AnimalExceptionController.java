@@ -1,11 +1,13 @@
 package com.argos.backend_services.controller.impl;
 
 import com.argos.backend_services.controller.AnimalExceptionControllerApi;
+import com.argos.backend_services.controller.annotation.CurrentUser;
 import com.argos.backend_services.dto.in.AnimalExceptionIn;
 import com.argos.backend_services.dto.out.AnimalExceptionOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.service.AnimalExceptionService;
+import com.argos.backend_services.security.CurrentUserData;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,8 +27,8 @@ public class AnimalExceptionController implements AnimalExceptionControllerApi {
     @Override
     public ResponseEntity<Void> create(
             AnimalExceptionIn input,
-            UUID userId) throws LotNotFoundException {
-        animalExceptionService.register(input, userId);
+            @CurrentUser CurrentUserData currentUser) throws LotNotFoundException {
+        animalExceptionService.register(input, currentUser.id());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -36,7 +38,7 @@ public class AnimalExceptionController implements AnimalExceptionControllerApi {
             UUID originId,
             int page,
             int size,
-            UUID userId) {
-        return ResponseEntity.ok(animalExceptionService.list(active, originId, userId, page, size));
+            @CurrentUser CurrentUserData currentUser) {
+        return ResponseEntity.ok(animalExceptionService.list(active, originId, currentUser.id(), page, size));
     }
 }

@@ -16,6 +16,7 @@ import com.argos.backend_services.repository.MedicineRepository;
 import com.argos.backend_services.repository.StockMovementRepository;
 import com.argos.backend_services.repository.SupplierRepository;
 import com.argos.backend_services.repository.UserRepository;
+import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.utils.PageableUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,6 +38,8 @@ public class MedicineService {
     private final SupplierRepository supplierRepository;
     private final StockMovementRepository stockMovementRepository;
     private final UserRepository userRepository;
+    private final PropertyRepository propertyRepository;
+    private final PropertyAccessService propertyAccessService;
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final MedicineMapper medicineMapper;
     private final Clock clock;
@@ -45,12 +48,14 @@ public class MedicineService {
     public MedicineCreatedOut registerBatch(MedicineBatchIn input, UUID userId) {
         var today = LocalDate.now(clock);
         validateDates(input, today);
+        propertyAccessService.requireActiveAccess(userId, input.propertyId());
 
         var medicine = medicineRepository.findByMapaRegistration(input.productRegistration().trim())
                 .filter(medicineCandidate -> medicineCandidate.isActive())
                 .orElseThrow(() -> new NotFoundException("Medicamento não encontrado para o registro MAPA informado"));
 
-        if (medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber().trim())) {
+        if (medicineBatchRepository.existsByMedicineIdAndBatchNumberAndProperty_Id(
+                medicine, input.batchNumber().trim(), input.propertyId())) {
             throw new BadRequestException("Já existe um lote com este número para o medicamento informado");
         }
 
@@ -62,6 +67,7 @@ public class MedicineService {
         var batch = medicineBatchRepository.save(MedicineBatch.builder()
                 .medicineId(medicine)
                 .supplierId(supplier)
+                .property(propertyRepository.getReferenceById(input.propertyId()))
                 .batchNumber(input.batchNumber().trim())
                 .manufactureDate(input.manufactureDate())
                 .expiryDate(input.expiryDate())
@@ -82,12 +88,13 @@ public class MedicineService {
     }
 
     @Transactional(readOnly = true)
-    public PageOut<MedicineListItemOut> list(UUID therapeuticCategoryId, int page, int size) {
+    public PageOut<MedicineListItemOut> list(UUID therapeuticCategoryId, int page, int size, UUID userId) {
         var pageable = PageableUtils.createPageRequest(page, size,
                 Sort.by(Sort.Order.asc("expiryDate"), Sort.Order.asc("medicineId.brandName"),
                         Sort.Order.asc("batchNumber")));
 
-        var result = filterByTherapeuticCategory(therapeuticCategoryId, pageable);
+        var result = filterByTherapeuticCategory(
+                therapeuticCategoryId, propertyAccessService.activePropertyIds(userId), pageable);
         var data = result.getContent().stream()
                 .map(batch -> medicineMapper.toListItemOut(
                         batch,
@@ -123,10 +130,14 @@ public class MedicineService {
         }
     }
 
-    private Page<MedicineBatch> filterByTherapeuticCategory(UUID therapeuticCategoryId, Pageable pageable) {
+    private Page<MedicineBatch> filterByTherapeuticCategory(
+            UUID therapeuticCategoryId, java.util.Collection<UUID> propertyIds, Pageable pageable) {
+        if (propertyIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
         return therapeuticCategoryId == null
-                ? medicineBatchRepository.findByStatus(MedicineBatch.Status.DISPONIVEL, pageable)
-                : medicineBatchRepository.findByStatusAndMedicineId_TherapeuticCategoryId(
-                MedicineBatch.Status.DISPONIVEL, therapeuticCategoryId, pageable);
+                ? medicineBatchRepository.findByStatusAndProperty_IdIn(MedicineBatch.Status.DISPONIVEL, propertyIds, pageable)
+                : medicineBatchRepository.findByStatusAndMedicineId_TherapeuticCategoryIdAndProperty_IdIn(
+                MedicineBatch.Status.DISPONIVEL, therapeuticCategoryId, propertyIds, pageable);
     }
 }

@@ -13,19 +13,22 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Collection;
 
 public interface MedicineBatchRepository extends JpaRepository<MedicineBatch, UUID> {
-    Optional<MedicineBatch> findByMedicineId(Medicine id);
 
-    boolean existsByMedicineIdAndBatchNumber(Medicine medicine, String batchNumber);
+    Optional<MedicineBatch> findByMedicineIdAndProperty_Id(Medicine id, UUID propertyId);
 
-    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "supplierId"})
-    Page<MedicineBatch> findByStatus(MedicineBatch.Status status, Pageable pageable);
+    boolean existsByMedicineIdAndBatchNumberAndProperty_Id(Medicine medicine, String batchNumber, UUID propertyId);
 
     @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "supplierId"})
-    Page<MedicineBatch> findByStatusAndMedicineId_TherapeuticCategoryId(
+    Page<MedicineBatch> findByStatusAndProperty_IdIn(MedicineBatch.Status status, Collection<UUID> propertyIds, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "supplierId"})
+    Page<MedicineBatch> findByStatusAndMedicineId_TherapeuticCategoryIdAndProperty_IdIn(
             MedicineBatch.Status status,
             UUID therapeuticCategoryId,
+            Collection<UUID> propertyIds,
             Pageable pageable);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

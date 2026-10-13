@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Schema(description = "Dados para registrar a entrada de um lote de medicamento cadastrado no MAPA")
 public record MedicineBatchIn(
@@ -39,6 +40,10 @@ public record MedicineBatchIn(
         @NotBlank
         @Pattern(regexp = "[0-9]{14}", message = "CNPJ deve conter 14 dígitos numéricos")
         @Schema(description = "CNPJ do fornecedor, com 14 dígitos e sem pontuação", example = "12345678000199")
-        String supplierCnpj
+        String supplierCnpj,
+
+        @NotNull
+        @Schema(description = "Propriedade que receberá o estoque", format = "uuid")
+        UUID propertyId
 ) {
 }

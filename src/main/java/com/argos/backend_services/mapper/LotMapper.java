@@ -3,6 +3,7 @@ package com.argos.backend_services.mapper;
 import com.argos.backend_services.dto.in.LotIn;
 import com.argos.backend_services.dto.out.LotOut;
 import com.argos.backend_services.entity.ApplicationAnimal;
+import com.argos.backend_services.entity.Herd;
 import com.argos.backend_services.entity.Lot;
 import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.repository.AnimalExceptionRepository;
@@ -31,11 +32,7 @@ public class LotMapper {
                 .build();
     }
 
-    public Lot toEntity(LotIn input) throws LotNotFoundException {
-        var herd = herdRepository.findByHerdNameAndActiveTrue(input.herdName())
-                .orElseThrow(() -> new LotNotFoundException(
-                        "Herd not found: " + input.herdName()));
-
+    public Lot toEntity(LotIn input, Herd herd) {
         return Lot.builder()
                 .id(null)
                 .herdId(herd)
@@ -52,6 +49,12 @@ public class LotMapper {
                 .createdAt(null)
                 .updatedAt(null)
                 .build();
+    }
+
+    public Lot toEntity(LotIn input) throws LotNotFoundException {
+        var herd = herdRepository.findByHerdNameAndActiveTrue(input.herdName())
+                .orElseThrow(() -> new LotNotFoundException("Herd not found: " + input.herdName()));
+        return toEntity(input, herd);
     }
 
     public LotOut toOut(Lot lot) {

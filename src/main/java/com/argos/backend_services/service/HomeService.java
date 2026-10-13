@@ -26,6 +26,7 @@ public class HomeService {
     private final ApplicationAnimalRepository applicationAnimalRepository;
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final HomeApplicationMapper mapper;
+    private final PropertyAccessService propertyAccessService;
 
     @Transactional(readOnly = true)
     public List<HomeApplicationOut> findApplicationCalendar(UUID userId) {
@@ -34,7 +35,12 @@ public class HomeService {
         var endDate = referenceDate.plusDays(CALENDAR_DAYS_AFTER);
 
         try {
-            return applicationRepository.findByUserId_IdAndMeatWithdrawalEndBetween(userId, startDate, endDate).stream()
+            var propertyIds = propertyAccessService.activePropertyIds(userId);
+            if (propertyIds.isEmpty()) {
+                return List.of();
+            }
+            return applicationRepository.findByMeatWithdrawalEndBetweenAndLotId_HerdId_PropertyId_IdIn(
+                            startDate, endDate, propertyIds).stream()
                     .map(application -> toHomeApplicationOut(application, referenceDate))
                     .toList();
         } catch (RuntimeException exception) {

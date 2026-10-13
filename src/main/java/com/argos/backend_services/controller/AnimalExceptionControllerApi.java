@@ -1,9 +1,12 @@
 package com.argos.backend_services.controller;
 
+import com.argos.backend_services.controller.annotation.CurrentUser;
+
 import com.argos.backend_services.dto.in.AnimalExceptionIn;
 import com.argos.backend_services.dto.out.AnimalExceptionOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.exception.LotNotFoundException;
+import com.argos.backend_services.security.CurrentUserData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -35,8 +37,7 @@ public interface AnimalExceptionControllerApi {
     })
     ResponseEntity<Void> create(
             @Valid @RequestBody AnimalExceptionIn input,
-            @Parameter(description = "Identificador do usuário", required = true)
-            @RequestHeader UUID userId) throws LotNotFoundException;
+            @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser) throws LotNotFoundException;
 
     @GetMapping
     @Operation(summary = "Lista animais em exceção", description = "Os filtros de atividade e lote de origem são opcionais.")
@@ -50,6 +51,5 @@ public interface AnimalExceptionControllerApi {
             @RequestParam(required = false) UUID originId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @Parameter(description = "Identificador do usuário", required = true)
-            @RequestHeader UUID userId);
+            @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser);
 }

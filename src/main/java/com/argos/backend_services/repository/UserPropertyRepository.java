@@ -12,6 +12,10 @@ import java.util.UUID;
 public interface UserPropertyRepository extends JpaRepository<UserProperty, UserPropertyId> {
     List<UserProperty> findAllByProperty_IdAndActiveTrue(UUID propertyId);
 
+    boolean existsByUser_IdAndProperty_IdAndActiveTrue(UUID userId, UUID propertyId);
+
+    List<UserProperty> findByUser_IdAndActiveTrue(UUID userId);
+
     @Query("""
             select up from UserProperty up join fetch up.property p
             where up.user.id in :userIds and up.active = true and p.active = true

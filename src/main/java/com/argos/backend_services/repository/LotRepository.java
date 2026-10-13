@@ -15,5 +15,11 @@ public interface LotRepository extends JpaRepository<Lot, UUID> {
     Optional<Lot> findByLotCode(String lotCode);
 
     @EntityGraph(attributePaths = {"herdId", "herdId.propertyId"})
+    Optional<Lot> findWithHerdAndPropertyByLotCode(String lotCode);
+
+    @EntityGraph(attributePaths = {"herdId", "herdId.propertyId"})
+    List<Lot> findByActiveTrueAndHerdId_PropertyId_IdIn(List<UUID> propertyIds);
+
+    @EntityGraph(attributePaths = {"herdId", "herdId.propertyId"})
     Optional<Lot> findWithHerdAndPropertyById(UUID lotId);
 }

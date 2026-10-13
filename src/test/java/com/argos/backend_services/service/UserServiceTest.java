@@ -69,7 +69,7 @@ class UserServiceTest {
         assertTrue(result.first());
         assertFalse(result.last());
 
-        UserListItemOut resultItem = result.data().getFirst();
+        UserListItemOut resultItem = result.data().get(0);
         assertEquals(userId, resultItem.userId());
         assertEquals("https://example.com/photo.jpg", resultItem.photoUrl());
         assertEquals("Argos User", resultItem.name());

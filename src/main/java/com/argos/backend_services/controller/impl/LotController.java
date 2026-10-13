@@ -1,5 +1,6 @@
-package com.argos.backend_services.controller;
+package com.argos.backend_services.controller.impl;
 
+import com.argos.backend_services.controller.LotControllerApi;
 import com.argos.backend_services.dto.in.LotIn;
 import com.argos.backend_services.dto.out.LotOut;
 import com.argos.backend_services.exception.LotNotFoundException;

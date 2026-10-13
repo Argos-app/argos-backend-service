@@ -1,5 +1,6 @@
-package com.argos.backend_services.controller;
+package com.argos.backend_services.controller.impl;
 
+import com.argos.backend_services.controller.HomeControllerApi;
 import com.argos.backend_services.controller.annotation.CurrentUser;
 import com.argos.backend_services.dto.out.HomeApplicationOut;
 import com.argos.backend_services.security.CurrentUserData;

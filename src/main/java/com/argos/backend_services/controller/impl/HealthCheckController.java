@@ -1,7 +1,8 @@
-package com.argos.backend_services.controller;
+package com.argos.backend_services.controller.impl;
 
 import java.util.Map;
 
+import com.argos.backend_services.controller.HealthCheckControllerApi;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 

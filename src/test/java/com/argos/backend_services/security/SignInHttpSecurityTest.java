@@ -2,7 +2,7 @@ package com.argos.backend_services.security;
 
 import com.argos.backend_services.config.SecurityConfig;
 import com.argos.backend_services.config.WebConfig;
-import com.argos.backend_services.controller.AuthController;
+import com.argos.backend_services.controller.impl.AuthController;
 import com.argos.backend_services.controller.handler.CustomGlobalException;
 import com.argos.backend_services.controller.resolver.CurrentUserArgumentResolver;
 import com.argos.backend_services.controller.resolver.FirebaseTokenArgumentResolver;

@@ -2,6 +2,7 @@ package com.argos.backend_services.repository;
 
 import com.argos.backend_services.entity.Herd;
 import com.argos.backend_services.entity.Lot;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -12,4 +13,7 @@ public interface LotRepository extends JpaRepository<Lot, UUID> {
     List<Lot> findByHerdId(Herd HerdId);
 
     Optional<Lot> findByLotCode(String lotCode);
+
+    @EntityGraph(attributePaths = {"herdId", "herdId.propertyId"})
+    Optional<Lot> findWithHerdAndPropertyById(UUID lotId);
 }

@@ -1,5 +1,6 @@
-package com.argos.backend_services.controller;
+package com.argos.backend_services.controller.impl;
 
+import com.argos.backend_services.controller.PropertyControllerApi;
 import com.argos.backend_services.dto.in.PropertyIn;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.out.PropertyOut;

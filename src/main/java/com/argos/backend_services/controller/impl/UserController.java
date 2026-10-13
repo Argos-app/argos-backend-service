@@ -1,5 +1,6 @@
-package com.argos.backend_services.controller;
+package com.argos.backend_services.controller.impl;
 
+import com.argos.backend_services.controller.UserControllerApi;
 import com.argos.backend_services.dto.in.CreateUserIn;
 import com.argos.backend_services.dto.in.UpdateUserAccessIn;
 import com.argos.backend_services.dto.in.UpdateUserIn;

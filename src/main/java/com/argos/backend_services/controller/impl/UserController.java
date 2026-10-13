@@ -12,6 +12,7 @@ import com.argos.backend_services.dto.out.UserAccessOut;
 import com.argos.backend_services.dto.out.UserCreationOptionsOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.dto.out.UserOptionOut;
+import com.argos.backend_services.dto.out.UserProfileOut;
 import com.argos.backend_services.service.UserService;
 import com.argos.backend_services.security.CurrentUserData;
 import com.argos.backend_services.controller.annotation.CurrentUser;
@@ -30,6 +31,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserController implements UserControllerApi {
     private final UserService userService;
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserProfileOut> getMyProfile(@CurrentUser CurrentUserData currentUser) {
+        return ResponseEntity.ok(userService.getMyProfile(currentUser.id()));
+    }
 
     @Override
     @PreAuthorize("hasAuthority('ADMIN')")

@@ -16,6 +16,12 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<AppUser, UUID> {
     Optional<AppUser> findByEmail(String email);
 
+    @Query("""
+            select u from AppUser u join fetch u.permission permission
+            where u.id = :userId and u.active = true and permission.active = true
+            """)
+    Optional<AppUser> findActiveProfileById(@Param("userId") UUID userId);
+
     boolean existsByCpf(String cpf);
 
     boolean existsByEmailAndIdNot(String email, UUID id);

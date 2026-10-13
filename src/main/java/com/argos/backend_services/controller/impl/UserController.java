@@ -2,6 +2,7 @@ package com.argos.backend_services.controller.impl;
 
 import com.argos.backend_services.controller.UserControllerApi;
 import com.argos.backend_services.dto.in.CreateUserIn;
+import com.argos.backend_services.dto.in.UpdateCurrentUserIn;
 import com.argos.backend_services.dto.in.UpdateUserAccessIn;
 import com.argos.backend_services.dto.in.UpdateUserIn;
 import com.argos.backend_services.dto.in.UpdateUserStatusIn;
@@ -103,6 +104,13 @@ public class UserController implements UserControllerApi {
     public ResponseEntity<Void> deleteUser(@PathVariable String userId,
                                            @CurrentUser CurrentUserData currentUser) {
         userService.delete(userId, currentUser.id());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> updateCurrentUser(@Valid @RequestBody UpdateCurrentUserIn data,
+                                                  @CurrentUser CurrentUserData currentUser) {
+        userService.updateCurrentUser(currentUser.id(), data);
         return ResponseEntity.noContent().build();
     }
 }

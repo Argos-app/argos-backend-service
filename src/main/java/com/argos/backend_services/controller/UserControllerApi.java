@@ -1,6 +1,7 @@
 package com.argos.backend_services.controller;
 
 import com.argos.backend_services.dto.in.CreateUserIn;
+import com.argos.backend_services.dto.in.UpdateCurrentUserIn;
 import com.argos.backend_services.dto.in.UpdateUserAccessIn;
 import com.argos.backend_services.dto.in.UpdateUserIn;
 import com.argos.backend_services.dto.in.UpdateUserStatusIn;
@@ -143,4 +144,17 @@ public interface UserControllerApi {
     })
     ResponseEntity<Void> deleteUser(@Parameter(description = "Identificador do usuário") @PathVariable String userId,
             @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser);
+
+    @PatchMapping("/update-perfil")
+    @Operation(summary = "Atualiza o perfil do usuário autenticado",
+            description = "Atualiza nome, e-mail e/ou URL da foto. Os campos não enviados são preservados.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Perfil atualizado"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos, vazios ou duplicados"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    })
+    ResponseEntity<Void> updateCurrentUser(
+            @Valid @RequestBody UpdateCurrentUserIn data,
+            @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser);
+
 }

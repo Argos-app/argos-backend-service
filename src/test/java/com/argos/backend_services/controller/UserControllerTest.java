@@ -105,7 +105,7 @@ public class UserControllerTest {
     void shouldAllowAuthenticatedUserToUpdateOnlyProvidedProfileFields() throws Exception {
         UpdateCurrentUserIn input = new UpdateCurrentUserIn("Updated User", null, null);
 
-        mockMvc.perform(patch("/users/me")
+        mockMvc.perform(patch("/users/update-perfil")
                         .with(authentication(userAuthentication()))
                         .contentType("application/json")
                         .content("{\"name\":\"Updated User\"}"))

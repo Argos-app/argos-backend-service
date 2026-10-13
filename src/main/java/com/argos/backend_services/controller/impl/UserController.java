@@ -108,6 +108,7 @@ public class UserController implements UserControllerApi {
     }
 
     @Override
+    @PatchMapping("/update-perfil")
     public ResponseEntity<Void> updateCurrentUser(@Valid @RequestBody UpdateCurrentUserIn data,
                                                   @CurrentUser CurrentUserData currentUser) {
         userService.updateCurrentUser(currentUser.id(), data);

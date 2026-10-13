@@ -8,21 +8,18 @@ import com.argos.backend_services.dto.out.ApplicationWithdrawalOut;
 import com.argos.backend_services.exception.InvalidDateWindowException;
 import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.exception.MedicineNotFoundException;
+import com.argos.backend_services.security.CurrentUserData;
 import com.argos.backend_services.service.ApplicationService;
 import com.argos.backend_services.service.ApplicationWithdrawalService;
-import com.argos.backend_services.security.CurrentUserData;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.UUID;
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

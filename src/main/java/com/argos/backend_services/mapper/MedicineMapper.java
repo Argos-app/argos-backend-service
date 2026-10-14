@@ -12,7 +12,6 @@ public interface MedicineMapper {
 
     @Mapping(target = "medicineBatchId", source = "batch.id")
     @Mapping(target = "medicineName", source = "batch.medicineId.brandName")
-    @Mapping(target = "supplier", source = "batch.supplierId.companyName")
     @Mapping(target = "manufactureDate", source = "batch.manufactureDate")
     @Mapping(target = "expiryDate", source = "batch.expiryDate")
     @Mapping(target = "quantity", source = "quantity")

@@ -39,7 +39,6 @@ class MedicineServiceTest {
     private SupplierRepository supplierRepository;
     private StockMovementRepository stockMovementRepository;
     private UserRepository userRepository;
-    private PropertyRepository propertyRepository;
     private PropertyAccessService propertyAccessService;
     private DatabaseRoutineRepository databaseRoutineRepository;
     private MedicineMapper medicineMapper;
@@ -53,12 +52,11 @@ class MedicineServiceTest {
         supplierRepository = mock(SupplierRepository.class);
         stockMovementRepository = mock(StockMovementRepository.class);
         userRepository = mock(UserRepository.class);
-        propertyRepository = mock(PropertyRepository.class);
         propertyAccessService = mock(PropertyAccessService.class);
         databaseRoutineRepository = mock(DatabaseRoutineRepository.class);
         medicineMapper = mock(MedicineMapper.class);
         service = new MedicineService(medicineRepository, medicineBatchRepository, supplierRepository,
-                stockMovementRepository, userRepository, propertyRepository, propertyAccessService,
+                stockMovementRepository, userRepository, propertyAccessService,
                 databaseRoutineRepository, medicineMapper, clock);
     }
 
@@ -71,10 +69,9 @@ class MedicineServiceTest {
         var input = validInput();
 
         when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
-        when(medicineBatchRepository.existsByMedicineIdAndBatchNumberAndProperty_Id(
-                medicine, input.batchNumber(), input.propertyId())).thenReturn(false);
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(
+                medicine, input.batchNumber())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(propertyRepository.getReferenceById(input.propertyId())).thenReturn(com.argos.backend_services.entity.Property.builder().id(input.propertyId()).build());
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.empty());
         when(supplierRepository.save(any(Supplier.class))).thenReturn(supplier);
         when(medicineBatchRepository.save(any(MedicineBatch.class))).thenAnswer(invocation -> {
@@ -86,11 +83,9 @@ class MedicineServiceTest {
         var result = service.registerBatch(input, user.getId());
 
         assertThat(result.medicineBatchId()).isEqualTo(batchId);
-        assertThat(result.supplierId()).isEqualTo(supplier.getId());
         var batchCaptor = ArgumentCaptor.forClass(MedicineBatch.class);
         verify(medicineBatchRepository).save(batchCaptor.capture());
         assertThat(batchCaptor.getValue().getMedicineId()).isEqualTo(medicine);
-        assertThat(batchCaptor.getValue().getSupplierId()).isEqualTo(supplier);
         assertThat(batchCaptor.getValue().getDeliveryDate()).isEqualTo(LocalDate.of(2026, 10, 11));
         verify(stockMovementRepository).save(argThat(movement ->
                 movement.getMedicineBatchId().getId().equals(batchId)
@@ -121,10 +116,9 @@ class MedicineServiceTest {
         var input = validInput();
 
         when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
-        when(medicineBatchRepository.existsByMedicineIdAndBatchNumberAndProperty_Id(
-                medicine, input.batchNumber(), input.propertyId())).thenReturn(false);
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(
+                medicine, input.batchNumber())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(propertyRepository.getReferenceById(input.propertyId())).thenReturn(com.argos.backend_services.entity.Property.builder().id(input.propertyId()).build());
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.of(supplier));
         when(medicineBatchRepository.save(any(MedicineBatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
 

@@ -6,7 +6,6 @@ import java.util.UUID;
 
 @Schema(description = "Identificadores criados no registro de entrada de medicamento")
 public record MedicineCreatedOut(
-        @Schema(description = "Identificador do lote criado", format = "uuid") UUID medicineBatchId,
-        @Schema(description = "Identificador do fornecedor associado ao lote", format = "uuid") UUID supplierId
+        @Schema(description = "Identificador do lote criado", format = "uuid") UUID medicineBatchId
 ) {
 }

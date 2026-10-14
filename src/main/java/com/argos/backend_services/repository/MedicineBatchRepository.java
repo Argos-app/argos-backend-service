@@ -17,18 +17,17 @@ import java.util.Collection;
 
 public interface MedicineBatchRepository extends JpaRepository<MedicineBatch, UUID> {
 
-    Optional<MedicineBatch> findByMedicineIdAndProperty_Id(Medicine id, UUID propertyId);
+    Optional<MedicineBatch> findByMedicineId(Medicine id);
 
-    boolean existsByMedicineIdAndBatchNumberAndProperty_Id(Medicine medicine, String batchNumber, UUID propertyId);
-
-    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "supplierId"})
-    Page<MedicineBatch> findByStatusAndProperty_IdIn(MedicineBatch.Status status, Collection<UUID> propertyIds, Pageable pageable);
+    boolean existsByMedicineIdAndBatchNumber(Medicine medicine, String batchNumber);
 
     @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "supplierId"})
-    Page<MedicineBatch> findByStatusAndMedicineId_TherapeuticCategoryIdAndProperty_IdIn(
+    Page<MedicineBatch> findByStatus(MedicineBatch.Status status, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "supplierId"})
+    Page<MedicineBatch> findByStatusAndMedicineId_TherapeuticCategoryId(
             MedicineBatch.Status status,
             UUID therapeuticCategoryId,
-            Collection<UUID> propertyIds,
             Pageable pageable);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

@@ -36,7 +36,7 @@ public class ApplicationService {
         var medicine = medicineRepository.findByBrandName(applicationIn.medicineName())
                 .orElseThrow(() -> new MedicineNotFoundException("Could not found medicine by name"));
 
-        var medicineBatch = medicineBatchRepository.findByMedicineIdAndProperty_Id(medicine, propertyId)
+        var medicineBatch = medicineBatchRepository.findByMedicineId(medicine)
                 .orElseThrow(() -> new MedicineNotFoundException("Could not found medicine batch by medicine id"));
 
         databaseRoutineRepository.registerApplication

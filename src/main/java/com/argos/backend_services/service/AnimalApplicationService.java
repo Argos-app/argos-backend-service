@@ -38,10 +38,6 @@ public class AnimalApplicationService {
         var medicineBatch = medicineBatchRepository.findById(input.medicineBatchId())
                 .orElseThrow(() -> new MedicineNotFoundException("Lote de medicamento não encontrado"));
 
-        if (!propertyId.equals(medicineBatch.getProperty().getId())) {
-            throw new MedicineNotFoundException("Lote de medicamento não encontrado para a propriedade da exceção");
-        }
-
         databaseRoutineRepository.registerAnimalApplication(
                 animalExceptionId,
                 medicineBatch.getId(),

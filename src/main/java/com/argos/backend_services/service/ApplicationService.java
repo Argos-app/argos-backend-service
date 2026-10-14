@@ -1,13 +1,19 @@
 package com.argos.backend_services.service;
 
 import com.argos.backend_services.dto.in.ApplicationIn;
+import com.argos.backend_services.dto.out.ApplicationHistoryOut;
 import com.argos.backend_services.dto.out.ApplicationOut;
+import com.argos.backend_services.dto.out.PageOut;
+import com.argos.backend_services.exception.BadRequestException;
 import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.exception.MedicineNotFoundException;
 import com.argos.backend_services.mapper.ApplicationMapper;
 import com.argos.backend_services.repository.*;
+import com.argos.backend_services.utils.PageableUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +21,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ApplicationService {
-
     private final LotRepository lotRepository;
     private final ApplicationRepository applicationRepository;
     private final MedicineBatchRepository medicineBatchRepository;
@@ -55,5 +60,25 @@ public class ApplicationService {
                     .forEach(result::add));
         }
         return result;
+    }
+
+    @Transactional(readOnly = true)
+    public PageOut<ApplicationHistoryOut> findHistory(int page, int size, UUID administratorId) {
+        PageableUtils.validatePageAndSize(page, size);
+
+        var result = applicationRepository.findHistoryByAdministratorId(
+                administratorId,
+                PageRequest.of(page, size)
+        );
+
+        return new PageOut<>(
+                result.getContent(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.isFirst(),
+                result.isLast()
+        );
     }
 }

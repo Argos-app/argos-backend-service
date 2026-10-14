@@ -23,6 +23,7 @@ import com.argos.backend_services.repository.PermissionRepository;
 import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.repository.UserPropertyRepository;
 import com.argos.backend_services.repository.UserRepository;
+import com.argos.backend_services.utils.PageableUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthErrorCode;
 import com.google.firebase.auth.FirebaseAuthException;
@@ -75,9 +76,8 @@ public class UserService {
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public PageOut<UserAccessOut> listUserAccesses(int page, int size, UUID administratorId) {
-        if (page < 0 || size < 1 || size > 100) {
-            throw new BadRequestException("Parâmetros de paginação inválidos");
-        }
+        PageableUtils.validatePageAndSize(page, size);
+
         Page<UserAccessOut> result = userRepository.findUserAccessesByAdministrator(administratorId, PageRequest.of(page, size));
         return new PageOut<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(),
                 result.getTotalPages(), result.isFirst(), result.isLast());
@@ -102,9 +102,7 @@ public class UserService {
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public PageOut<AdminUserOptionOut> listAdministrators(int page, int size, UUID administratorId) {
-        if (page < 0 || size < 1 || size > 100) {
-            throw new BadRequestException("Parâmetros de paginação inválidos");
-        }
+        PageableUtils.validatePageAndSize(page, size);
         Page<AdminUserOptionOut> result = userRepository
                 .findByIdAndActiveTrueAndPermission_ActiveTrueAndPermission_Code(
                         administratorId, "ADMIN", PageRequest.of(page, size))
@@ -269,10 +267,7 @@ public class UserService {
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public PageOut<UserListItemOut> listUsers(int page, int size, UUID administratorId) {
-        if (page < 0 || size < 1 || size > 100) {
-            throw new BadRequestException("Parâmetros de paginação inválidos");
-        }
-
+       PageableUtils.validatePageAndSize(page, size);
         Page<UserListItemOut> result = userRepository.findLinkedByAdministrator(administratorId, PageRequest.of(page, size));
 
         Map<UUID, List<UserPropertyOut>> propertiesByUser = result.isEmpty() ? Map.of()

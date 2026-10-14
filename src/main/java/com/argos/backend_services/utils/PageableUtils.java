@@ -13,12 +13,17 @@ public final class PageableUtils {
     }
 
     public static Pageable createPageRequest(int page, int size, Sort sort) {
+        validatePageAndSize(page, size);
+
+        return PageRequest.of(page, size, sort);
+    }
+
+    public static void validatePageAndSize(int page, int size) {
         if (page < 0) {
             throw new BadRequestException("Página não pode ser negativa");
         }
         if (size < 1 || size > MAX_PAGE_SIZE) {
             throw new BadRequestException("Tamanho da página deve estar entre 1 e " + MAX_PAGE_SIZE);
         }
-        return PageRequest.of(page, size, sort);
     }
 }

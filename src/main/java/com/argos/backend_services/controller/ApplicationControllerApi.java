@@ -1,11 +1,15 @@
 package com.argos.backend_services.controller;
 
 import com.argos.backend_services.dto.in.ApplicationIn;
+import com.argos.backend_services.dto.out.ApplicationHistoryOut;
 import com.argos.backend_services.dto.out.ApplicationOut;
 import com.argos.backend_services.dto.out.ApplicationWithdrawalOut;
+import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.exception.InvalidDateWindowException;
 import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.exception.MedicineNotFoundException;
+import com.argos.backend_services.security.CurrentUserData;
+import com.argos.backend_services.controller.annotation.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -40,6 +44,20 @@ public interface ApplicationControllerApi {
             @ApiResponse(responseCode = "401", description = "Usuário não autenticado")
     })
     ResponseEntity<List<ApplicationOut>> listAll();
+
+    @GetMapping("/history")
+    @Operation(summary = "Lista o histórico de aplicações das fazendas do administrador autenticado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Histórico encontrado"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros de paginação inválidos"),
+            @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Acesso permitido somente a administradores")
+    })
+    ResponseEntity<PageOut<ApplicationHistoryOut>> applicationHistory(
+            @Parameter(description = "Índice da página, começando em zero") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Quantidade de registros por página") @RequestParam(defaultValue = "10") int size,
+            @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser
+    );
 
     @GetMapping("/withdrawal-window")
     @Operation(summary = "Lista aplicações próximas da janela de retirada", description = "Usa a data atual como referência quando nenhuma data é informada.")

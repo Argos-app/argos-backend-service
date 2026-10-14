@@ -13,6 +13,7 @@ import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.repository.UserPropertyRepository;
 import com.argos.backend_services.repository.UserRepository;
+import com.argos.backend_services.utils.PageableUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -36,9 +37,7 @@ public class PropertyService {
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public PageOut<PropertyOut> listActive(int page, int size, UUID administratorId) {
-        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
-            throw new BadRequestException("Parâmetros de paginação inválidos");
-        }
+        PageableUtils.validatePageAndSize(page, size);
 
         Page<PropertyOut> result = propertyRepository
                 .findByUser_IdAndActiveTrue(administratorId,

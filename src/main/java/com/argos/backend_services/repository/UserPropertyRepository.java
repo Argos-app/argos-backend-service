@@ -2,6 +2,7 @@ package com.argos.backend_services.repository;
 
 import com.argos.backend_services.entity.UserProperty;
 import com.argos.backend_services.entity.UserPropertyId;
+import com.argos.backend_services.dto.out.UserProfilePropertyOut;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +16,14 @@ public interface UserPropertyRepository extends JpaRepository<UserProperty, User
     boolean existsByUser_IdAndProperty_IdAndActiveTrue(UUID userId, UUID propertyId);
 
     List<UserProperty> findByUser_IdAndActiveTrue(UUID userId);
+
+    @Query("""
+            select new com.argos.backend_services.dto.out.UserProfilePropertyOut(p.id, p.name)
+            from UserProperty up join up.property p
+            where up.user.id = :userId and up.active = true and p.active = true
+            order by lower(p.name) asc, p.id asc
+            """)
+    List<UserProfilePropertyOut> findActiveProfileProperties(@Param("userId") UUID userId);
 
     @Query("""
             select up from UserProperty up join fetch up.property p

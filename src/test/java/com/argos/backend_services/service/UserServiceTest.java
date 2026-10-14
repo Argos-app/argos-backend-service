@@ -2,10 +2,13 @@ package com.argos.backend_services.service;
 
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
+import com.argos.backend_services.dto.out.UserProfilePropertyOut;
 import com.argos.backend_services.entity.AppUser;
+import com.argos.backend_services.entity.Permission;
 import com.argos.backend_services.entity.Property;
 import com.argos.backend_services.entity.UserProperty;
 import com.argos.backend_services.exception.BadRequestException;
+import com.argos.backend_services.exception.UnauthorizedException;
 import com.argos.backend_services.repository.UserRepository;
 import com.argos.backend_services.repository.UserPropertyRepository;
 import com.argos.backend_services.repository.PermissionRepository;
@@ -17,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,6 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 class UserServiceTest {
     private static final UUID ADMINISTRATOR_ID = UUID.randomUUID();
@@ -103,6 +108,65 @@ class UserServiceTest {
         UserService service = new UserService(users, links, mock(PermissionRepository.class), mock(PropertyRepository.class));
 
         assertTrue(service.listUsers(0, 6, ADMINISTRATOR_ID).data().isEmpty());
+        verifyNoInteractions(links);
+    }
+
+    @Test
+    void shouldReturnCurrentProfileFieldsAndAllOwnActiveFarms() {
+        UserRepository users = mock(UserRepository.class);
+        UserPropertyRepository links = mock(UserPropertyRepository.class);
+        UserService service = new UserService(users, links, mock(PermissionRepository.class), mock(PropertyRepository.class));
+        UUID userId = UUID.randomUUID();
+        Permission permission = Permission.builder().name("Operador").code("USER").active(true).build();
+        AppUser user = AppUser.builder().id(userId).name("Nome atualizado").email("current@test.invalid")
+                .cpf("12345678901").photoUrl("https://example.com/avatar.png")
+                .permission(permission).active(true).build();
+        var farms = List.of(new UserProfilePropertyOut(UUID.randomUUID(), "Alpha"),
+                new UserProfilePropertyOut(UUID.randomUUID(), "Zeta"));
+        when(users.findActiveProfileById(userId)).thenReturn(Optional.of(user));
+        when(links.findActiveProfileProperties(userId)).thenReturn(farms);
+
+        var result = service.getMyProfile(userId);
+
+        assertEquals(userId, result.userId());
+        assertEquals(user.getName(), result.name());
+        assertEquals(user.getEmail(), result.email());
+        assertEquals(user.getCpf(), result.cpf());
+        assertEquals(user.getPhotoUrl(), result.photoUrl());
+        assertEquals("Operador", result.permissionName());
+        assertEquals("USER", result.permissionCode());
+        assertTrue(result.active());
+        assertEquals(farms, result.properties());
+        verify(users).findActiveProfileById(userId);
+        verify(links).findActiveProfileProperties(userId);
+        verifyNoMoreInteractions(users, links);
+    }
+
+    @Test
+    void shouldReturnProfileWithEmptyFarmsAndNullablePhoto() {
+        UserRepository users = mock(UserRepository.class);
+        UserPropertyRepository links = mock(UserPropertyRepository.class);
+        UserService service = new UserService(users, links, mock(PermissionRepository.class), mock(PropertyRepository.class));
+        UUID userId = UUID.randomUUID();
+        when(users.findActiveProfileById(userId)).thenReturn(Optional.of(AppUser.builder().id(userId)
+                .permission(Permission.builder().code("USER").name("Operador").build()).active(true).build()));
+        when(links.findActiveProfileProperties(userId)).thenReturn(List.of());
+
+        var result = service.getMyProfile(userId);
+
+        assertTrue(result.properties().isEmpty());
+        assertNull(result.photoUrl());
+    }
+
+    @Test
+    void shouldRejectUnauthorizedProfileWithoutLoadingFarms() {
+        UserRepository users = mock(UserRepository.class);
+        UserPropertyRepository links = mock(UserPropertyRepository.class);
+        UserService service = new UserService(users, links, mock(PermissionRepository.class), mock(PropertyRepository.class));
+        UUID userId = UUID.randomUUID();
+        when(users.findActiveProfileById(userId)).thenReturn(Optional.empty());
+
+        assertThrows(UnauthorizedException.class, () -> service.getMyProfile(userId));
         verifyNoInteractions(links);
     }
 }

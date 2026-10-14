@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface MedicineRepository extends JpaRepository<Medicine, UUID> {
     List<Medicine> findByTherapeuticCategoryId(TherapeuticCategory therapeuticCategoryId);
     Optional<Medicine> findByBrandName(String brandName);
+    Optional<Medicine> findByMapaRegistration(String mapaRegistration);
 }

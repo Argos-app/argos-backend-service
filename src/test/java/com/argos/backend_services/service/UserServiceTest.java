@@ -77,9 +77,9 @@ class UserServiceTest {
         assertEquals("user@argos.com", resultItem.email());
         assertTrue(resultItem.active());
         assertEquals(2, resultItem.properties().size());
-        assertEquals("Fazenda Sao Joao", resultItem.properties().getFirst().name());
-        assertEquals("12345678000190", resultItem.properties().getFirst().cnpj());
-        assertEquals(LocalDate.of(2026, 1, 15), resultItem.properties().getFirst().linkDate());
+        assertEquals("Fazenda Sao Joao", resultItem.properties().get(0).name());
+        assertEquals("12345678000190", resultItem.properties().get(0).cnpj());
+        assertEquals(LocalDate.of(2026, 1, 15), resultItem.properties().get(0).linkDate());
 
         verify(userRepository).findLinkedByAdministrator(eq(ADMINISTRATOR_ID), eq(PageRequest.of(0, 6)));
         verify(userPropertyRepository).findActiveLinksByUsersAndAdministrator(List.of(userId), ADMINISTRATOR_ID);

@@ -2,6 +2,7 @@ package com.argos.backend_services.service;
 
 import com.argos.backend_services.dto.in.CreateUserIn;
 import com.argos.backend_services.dto.in.UpdateUserIn;
+import com.argos.backend_services.dto.in.UpdateCurrentUserIn;
 import com.argos.backend_services.dto.in.UpdateUserAccessIn;
 import com.argos.backend_services.dto.in.UpdateUserStatusIn;
 import com.argos.backend_services.dto.out.CreateUserOut;
@@ -111,6 +112,33 @@ public class UserService {
         AppUser user = findExclusiveUser(userId, administratorId);
         user.setActive(data.active());
         userRepository.saveAndFlush(user);
+    }
+
+    @Transactional
+    public void updateCurrentUser(UUID userId, UpdateCurrentUserIn data) {
+        if (data.isEmpty()) {
+            throw new BadRequestException("Informe ao menos um campo para atualização");
+        }
+
+        AppUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+        String previousEmail = user.getEmail();
+        String name = data.name() == null ? user.getName() : data.name().trim();
+        String email = data.email() == null ? user.getEmail() : data.email().trim().toLowerCase(Locale.ROOT);
+        String photoUrl = data.photoUrl() == null ? user.getPhotoUrl() : data.photoUrl().trim();
+
+        if (name.isBlank() || email.isBlank()) {
+            throw new BadRequestException("Nome e email não podem ficar vazios");
+        }
+        if (userRepository.existsByEmailAndIdNot(email, userId)) {
+            throw new BadRequestException("Email já cadastrado");
+        }
+
+        user.setName(name);
+        user.setEmail(email);
+        user.setPhotoUrl(photoUrl);
+        userRepository.save(user);
+        synchronizeFirebaseProfile(user, name, email, previousEmail, photoUrl);
     }
 
     @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
@@ -256,10 +284,11 @@ public class UserService {
             userPropertyRepository.saveAndFlush(existingTargetLink);
         }
 
-        synchronizeFirebaseProfile(user, name, email, previousEmail);
+        synchronizeFirebaseProfile(user, name, email, previousEmail, user.getPhotoUrl());
     }
 
-    private void synchronizeFirebaseProfile(AppUser user, String name, String email, String previousEmail) {
+    private void synchronizeFirebaseProfile(AppUser user, String name, String email, String previousEmail,
+                                            String photoUrl) {
         try {
             FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
             UserRecord firebaseUser = user.getFirebaseUid() == null
@@ -267,7 +296,8 @@ public class UserService {
                     : firebaseAuth.getUser(user.getFirebaseUid());
             firebaseAuth.updateUser(new UserRecord.UpdateRequest(firebaseUser.getUid())
                     .setDisplayName(name)
-                    .setEmail(email));
+                    .setEmail(email)
+                    .setPhotoUrl(photoUrl));
             user.setFirebaseUid(firebaseUser.getUid());
         } catch (FirebaseAuthException exception) {
             LOGGER.error("Erro ao atualizar perfil do usuário no Firebase: {}", exception.getMessage(), exception);

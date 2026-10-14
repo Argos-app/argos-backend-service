@@ -4,6 +4,7 @@ import com.argos.backend_services.config.SecurityConfig;
 import com.argos.backend_services.controller.impl.UserController;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.in.CreateUserIn;
+import com.argos.backend_services.dto.in.UpdateCurrentUserIn;
 import com.argos.backend_services.dto.out.CreateUserOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.dto.out.UserPropertyOut;
@@ -41,6 +42,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -111,6 +113,19 @@ public class UserControllerTest {
                         .contentType("application/json")
                         .content("{}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldAllowAuthenticatedUserToUpdateOnlyProvidedProfileFields() throws Exception {
+        UpdateCurrentUserIn input = new UpdateCurrentUserIn("Updated User", null, null);
+
+        mockMvc.perform(patch("/users/update-perfil")
+                        .with(authentication(userAuthentication()))
+                        .contentType("application/json")
+                        .content("{\"name\":\"Updated User\"}"))
+                .andExpect(status().isNoContent());
+
+        verify(userService).updateCurrentUser(org.mockito.ArgumentMatchers.any(UUID.class), org.mockito.ArgumentMatchers.eq(input));
     }
 
     @Test

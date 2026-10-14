@@ -35,8 +35,7 @@ class AnimalApplicationServiceTest {
         var userId = UUID.randomUUID();
         var animalExceptionId = UUID.randomUUID();
         var medicine = Medicine.builder().id(UUID.randomUUID()).build();
-        var medicineBatch = MedicineBatch.builder().id(UUID.randomUUID()).medicineId(medicine)
-                .property(Property.builder().id(propertyId).build()).build();
+        var medicineBatch = MedicineBatch.builder().id(UUID.randomUUID()).medicineId(medicine).build();
         var originLot = Lot.builder().active(true)
                 .herdId(Herd.builder().propertyId(Property.builder().id(propertyId).build()).build())
                 .build();

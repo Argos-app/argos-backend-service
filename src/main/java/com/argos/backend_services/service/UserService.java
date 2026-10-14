@@ -141,7 +141,6 @@ public class UserService {
         synchronizeFirebaseProfile(user, name, email, previousEmail, photoUrl);
     }
 
-    @Transactional(Transactional.TxType.SUPPORTS)
     @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public PageOut<AdminUserOptionOut> listAdministrators(int page, int size, UUID administratorId) {
         if (page < 0 || size < 1 || size > 100) {

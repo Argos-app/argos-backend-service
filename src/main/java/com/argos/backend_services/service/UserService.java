@@ -2,12 +2,14 @@ package com.argos.backend_services.service;
 
 import com.argos.backend_services.dto.in.CreateUserIn;
 import com.argos.backend_services.dto.in.UpdateUserIn;
+import com.argos.backend_services.dto.in.UpdateCurrentUserIn;
 import com.argos.backend_services.dto.in.UpdateUserAccessIn;
 import com.argos.backend_services.dto.in.UpdateUserStatusIn;
 import com.argos.backend_services.dto.out.CreateUserOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.dto.out.UserPropertyOut;
+import com.argos.backend_services.dto.out.UserProfileOut;
 import com.argos.backend_services.dto.out.UserAccessOut;
 import com.argos.backend_services.dto.out.UserCreationOptionsOut;
 import com.argos.backend_services.dto.out.UserOptionOut;
@@ -19,6 +21,7 @@ import com.argos.backend_services.entity.Property;
 import com.argos.backend_services.entity.UserProperty;
 import com.argos.backend_services.exception.BadRequestException;
 import com.argos.backend_services.exception.NotFoundException;
+import com.argos.backend_services.exception.UnauthorizedException;
 import com.argos.backend_services.repository.PermissionRepository;
 import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.repository.UserPropertyRepository;
@@ -28,7 +31,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthErrorCode;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +60,17 @@ public class UserService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class);
 
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(readOnly = true)
+    public UserProfileOut getMyProfile(UUID userId) {
+        AppUser user = userRepository.findActiveProfileById(userId)
+                .orElseThrow(() -> new UnauthorizedException("Sessão não autorizada"));
+        Permission permission = user.getPermission();
+        return new UserProfileOut(user.getId(), user.getName(), user.getEmail(), user.getCpf(),
+                user.getPhotoUrl(), permission.getName(), permission.getCode(),
+                Boolean.TRUE.equals(user.getActive()), userPropertyRepository.findActiveProfileProperties(userId));
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public UserCreationOptionsOut getCreationOptions(UUID administratorId) {
         List<UserOptionOut> properties = propertyRepository.findByUser_IdAndActiveTrueOrderByNameAsc(administratorId).stream()
                 .map(property -> new UserOptionOut(property.getId(), property.getName()))
@@ -67,14 +81,14 @@ public class UserService {
         return new UserCreationOptionsOut(properties, permissions);
     }
 
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public List<UserOptionOut> getActivePermissions() {
         return permissionRepository.findByActiveOrderByNameAsc(true).stream()
                 .map(permission -> new UserOptionOut(permission.getId(), permission.getName()))
                 .toList();
     }
 
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public PageOut<UserAccessOut> listUserAccesses(int page, int size, UUID administratorId) {
         PageableUtils.validatePageAndSize(page, size);
 
@@ -100,7 +114,34 @@ public class UserService {
         userRepository.saveAndFlush(user);
     }
 
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional
+    public void updateCurrentUser(UUID userId, UpdateCurrentUserIn data) {
+        if (data.isEmpty()) {
+            throw new BadRequestException("Informe ao menos um campo para atualização");
+        }
+
+        AppUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+        String previousEmail = user.getEmail();
+        String name = data.name() == null ? user.getName() : data.name().trim();
+        String email = data.email() == null ? user.getEmail() : data.email().trim().toLowerCase(Locale.ROOT);
+        String photoUrl = data.photoUrl() == null ? user.getPhotoUrl() : data.photoUrl().trim();
+
+        if (name.isBlank() || email.isBlank()) {
+            throw new BadRequestException("Nome e email não podem ficar vazios");
+        }
+        if (userRepository.existsByEmailAndIdNot(email, userId)) {
+            throw new BadRequestException("Email já cadastrado");
+        }
+
+        user.setName(name);
+        user.setEmail(email);
+        user.setPhotoUrl(photoUrl);
+        userRepository.save(user);
+        synchronizeFirebaseProfile(user, name, email, previousEmail, photoUrl);
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public PageOut<AdminUserOptionOut> listAdministrators(int page, int size, UUID administratorId) {
         PageableUtils.validatePageAndSize(page, size);
         Page<AdminUserOptionOut> result = userRepository
@@ -241,10 +282,11 @@ public class UserService {
             userPropertyRepository.saveAndFlush(existingTargetLink);
         }
 
-        synchronizeFirebaseProfile(user, name, email, previousEmail);
+        synchronizeFirebaseProfile(user, name, email, previousEmail, user.getPhotoUrl());
     }
 
-    private void synchronizeFirebaseProfile(AppUser user, String name, String email, String previousEmail) {
+    private void synchronizeFirebaseProfile(AppUser user, String name, String email, String previousEmail,
+                                            String photoUrl) {
         try {
             FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
             UserRecord firebaseUser = user.getFirebaseUid() == null
@@ -252,7 +294,8 @@ public class UserService {
                     : firebaseAuth.getUser(user.getFirebaseUid());
             firebaseAuth.updateUser(new UserRecord.UpdateRequest(firebaseUser.getUid())
                     .setDisplayName(name)
-                    .setEmail(email));
+                    .setEmail(email)
+                    .setPhotoUrl(photoUrl));
             user.setFirebaseUid(firebaseUser.getUid());
         } catch (FirebaseAuthException exception) {
             LOGGER.error("Erro ao atualizar perfil do usuário no Firebase: {}", exception.getMessage(), exception);
@@ -265,7 +308,7 @@ public class UserService {
         }
     }
 
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public PageOut<UserListItemOut> listUsers(int page, int size, UUID administratorId) {
        PageableUtils.validatePageAndSize(page, size);
         Page<UserListItemOut> result = userRepository.findLinkedByAdministrator(administratorId, PageRequest.of(page, size));

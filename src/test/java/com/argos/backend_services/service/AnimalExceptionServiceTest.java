@@ -10,7 +10,6 @@ import com.argos.backend_services.repository.AnimalExceptionRepository;
 import com.argos.backend_services.repository.ApplicationAnimalRepository;
 import com.argos.backend_services.repository.DatabaseRoutineRepository;
 import com.argos.backend_services.repository.LotRepository;
-import com.argos.backend_services.repository.PropertyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +27,7 @@ class AnimalExceptionServiceTest {
     private AnimalExceptionRepository animalExceptionRepository;
     private ApplicationAnimalRepository applicationAnimalRepository;
     private LotRepository lotRepository;
-    private PropertyRepository propertyRepository;
+    private PropertyAccessService propertyAccessService;
     private DatabaseRoutineRepository databaseRoutineRepository;
     private AnimalExceptionService service;
 
@@ -37,13 +36,13 @@ class AnimalExceptionServiceTest {
         animalExceptionRepository = mock(AnimalExceptionRepository.class);
         applicationAnimalRepository = mock(ApplicationAnimalRepository.class);
         lotRepository = mock(LotRepository.class);
-        propertyRepository = mock(PropertyRepository.class);
+        propertyAccessService = mock(PropertyAccessService.class);
         databaseRoutineRepository = mock(DatabaseRoutineRepository.class);
         service = new AnimalExceptionService(
                 animalExceptionRepository,
                 applicationAnimalRepository,
                 lotRepository,
-                propertyRepository,
+                propertyAccessService,
                 databaseRoutineRepository,
                 mock(AnimalExceptionMapper.class));
     }
@@ -55,10 +54,10 @@ class AnimalExceptionServiceTest {
         var originLot = lot("ORIG-01", true, propertyId);
         var input = new AnimalExceptionIn(originLot.getId(), "BR-001", "Doença respiratória", new BigDecimal("420.50"));
         when(lotRepository.findWithHerdAndPropertyById(originLot.getId())).thenReturn(Optional.of(originLot));
-        when(propertyRepository.findByUserIdAndActiveTrue(userId)).thenReturn(List.of(Property.builder().id(propertyId).build()));
 
         service.register(input, userId);
 
+        verify(propertyAccessService).requireActiveAccess(userId, propertyId);
         verify(databaseRoutineRepository).registerException(
                 originLot.getId(), input.earTag(), input.exceptionReason(), input.currentWeight());
     }

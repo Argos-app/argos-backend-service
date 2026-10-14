@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -21,17 +22,25 @@ public class ApplicationWithdrawalService {
     private final ApplicationRepository applicationRepository;
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final ApplicationWithdrawalMapper mapper;
+    private final PropertyAccessService propertyAccessService;
     private final Clock clock = Clock.systemDefaultZone();
 
     @Transactional(readOnly = true)
-    public List<ApplicationWithdrawalOut> findNearDate(LocalDate referenceDate, int daysBefore, int daysAfter) throws InvalidDateWindowException {
+    public List<ApplicationWithdrawalOut> findNearDate(
+            LocalDate referenceDate, int daysBefore, int daysAfter, UUID userId) throws InvalidDateWindowException {
+
         if (daysBefore < 0 || daysAfter < 0) {
             throw new InvalidDateWindowException("The date window cannot be negative");
         }
         var start = referenceDate.minusDays(daysBefore);
         var end = referenceDate.plusDays(daysAfter);
         try {
-            return applicationRepository.findByMeatWithdrawalEndBetween(start, end).stream()
+            var propertyIds = propertyAccessService.activePropertyIds(userId);
+            if (propertyIds.isEmpty()) {
+                return List.of();
+            }
+            return applicationRepository.findByMeatWithdrawalEndBetweenAndLotId_HerdId_PropertyId_IdIn(
+                            start, end, propertyIds).stream()
                     .map(application -> mapper.toOut(application, referenceDate))
                     .toList();
         } catch (RuntimeException exception) {

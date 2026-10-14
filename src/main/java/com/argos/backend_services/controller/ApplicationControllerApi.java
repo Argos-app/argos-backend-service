@@ -1,5 +1,7 @@
 package com.argos.backend_services.controller;
 
+import com.argos.backend_services.controller.annotation.CurrentUser;
+
 import com.argos.backend_services.dto.in.ApplicationIn;
 import com.argos.backend_services.dto.out.ApplicationHistoryOut;
 import com.argos.backend_services.dto.out.ApplicationOut;
@@ -9,7 +11,6 @@ import com.argos.backend_services.exception.InvalidDateWindowException;
 import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.exception.MedicineNotFoundException;
 import com.argos.backend_services.security.CurrentUserData;
-import com.argos.backend_services.controller.annotation.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -34,7 +35,7 @@ public interface ApplicationControllerApi {
             @ApiResponse(responseCode = "400", description = "Dados da aplicação inválidos"),
             @ApiResponse(responseCode = "422", description = "Lote ou medicamento não encontrado")
     })
-    ResponseEntity<Void> createApplication(@Parameter(description = "Identificador do usuário") @RequestHeader UUID userId,
+    ResponseEntity<Void> createApplication(@Parameter(hidden = true) @CurrentUser CurrentUserData currentUser,
                                            @Valid @RequestBody ApplicationIn applicationIn) throws LotNotFoundException, MedicineNotFoundException;
 
     @GetMapping("/list-all")
@@ -43,7 +44,7 @@ public interface ApplicationControllerApi {
             @ApiResponse(responseCode = "200", description = "Aplicações encontradas"),
             @ApiResponse(responseCode = "401", description = "Usuário não autenticado")
     })
-    ResponseEntity<List<ApplicationOut>> listAll();
+    ResponseEntity<List<ApplicationOut>> listAll(@Parameter(hidden = true) @CurrentUser CurrentUserData currentUser);
 
     @GetMapping("/history")
     @Operation(summary = "Lista o histórico de aplicações das fazendas do administrador autenticado")
@@ -68,5 +69,6 @@ public interface ApplicationControllerApi {
     ResponseEntity<List<ApplicationWithdrawalOut>> withdrawalWindow(
             @Parameter(description = "Data de referência no formato yyyy-MM-dd") @RequestParam(required = false) LocalDate referenceDate,
             @Parameter(description = "Dias anteriores à data de referência") @RequestParam(defaultValue = "7") int daysBefore,
-            @Parameter(description = "Dias posteriores à data de referência") @RequestParam(defaultValue = "7") int daysAfter) throws InvalidDateWindowException;
+            @Parameter(description = "Dias posteriores à data de referência") @RequestParam(defaultValue = "7") int daysAfter,
+            @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser) throws InvalidDateWindowException;
 }

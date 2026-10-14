@@ -19,25 +19,36 @@ import java.util.UUID;
 public class LotService {
 
     private final LotRepository lotRepository;
+    private final HerdRepository herdRepository;
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final LotMapper mapper;
+    private final PropertyAccessService propertyAccessService;
 
     @Transactional(readOnly = true)
     public List<LotOut> listLot(UUID userId) {
-        return lotRepository.findAll().stream()
-                .filter(Lot::isActive)
+        var propertyIds = propertyAccessService.activePropertyIds(userId);
+        if (propertyIds.isEmpty()) {
+            return List.of();
+        }
+        return lotRepository.findByActiveTrueAndHerdId_PropertyId_IdIn(propertyIds).stream()
                 .map(mapper::toOut)
                 .toList();
     }
 
-    public void registerLot(LotIn input) throws LotNotFoundException {
-        var lot = mapper.toEntity(input);
+    public void registerLot(LotIn input, UUID userId) throws LotNotFoundException {
+        var herd = herdRepository.findWithPropertyByHerdNameAndActiveTrue(input.herdName())
+                .orElseThrow(() -> new LotNotFoundException("Herd not found: " + input.herdName()));
+
+        propertyAccessService.requireActiveAccess(userId, herd.getPropertyId().getId());
+        var lot = mapper.toEntity(input, herd);
         lotRepository.save(lot);
     }
 
     public void deleteLot(UUID lotId, UUID userId) throws LotNotFoundException {
-        var lot = lotRepository.findById(lotId)
+        var lot = lotRepository.findWithHerdAndPropertyById(lotId)
                 .orElseThrow(() -> new LotNotFoundException("Lote não achado pelo id: " + lotId));
+
+        propertyAccessService.requireActiveAccess(userId, lot.getHerdId().getPropertyId().getId());
         if (!Boolean.TRUE.equals(databaseRoutineRepository.lotIsReleaseForSlaughter(lotId, LocalDate.now()))) {
             throw new LotNotFoundException("Lote não disponível para abate");
         }

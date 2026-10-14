@@ -2,6 +2,7 @@ package com.argos.backend_services.controller.impl;
 
 import com.argos.backend_services.controller.UserControllerApi;
 import com.argos.backend_services.dto.in.CreateUserIn;
+import com.argos.backend_services.dto.in.UpdateCurrentUserIn;
 import com.argos.backend_services.dto.in.UpdateUserAccessIn;
 import com.argos.backend_services.dto.in.UpdateUserIn;
 import com.argos.backend_services.dto.in.UpdateUserStatusIn;
@@ -12,6 +13,7 @@ import com.argos.backend_services.dto.out.UserAccessOut;
 import com.argos.backend_services.dto.out.UserCreationOptionsOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.dto.out.UserOptionOut;
+import com.argos.backend_services.dto.out.UserProfileOut;
 import com.argos.backend_services.service.UserService;
 import com.argos.backend_services.security.CurrentUserData;
 import com.argos.backend_services.controller.annotation.CurrentUser;
@@ -30,6 +32,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserController implements UserControllerApi {
     private final UserService userService;
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserProfileOut> getMyProfile(@CurrentUser CurrentUserData currentUser) {
+        return ResponseEntity.ok(userService.getMyProfile(currentUser.id()));
+    }
 
     @Override
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -103,6 +111,14 @@ public class UserController implements UserControllerApi {
     public ResponseEntity<Void> deleteUser(@PathVariable String userId,
                                            @CurrentUser CurrentUserData currentUser) {
         userService.delete(userId, currentUser.id());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @PatchMapping("/update-perfil")
+    public ResponseEntity<Void> updateCurrentUser(@Valid @RequestBody UpdateCurrentUserIn data,
+                                                  @CurrentUser CurrentUserData currentUser) {
+        userService.updateCurrentUser(currentUser.id(), data);
         return ResponseEntity.noContent().build();
     }
 }

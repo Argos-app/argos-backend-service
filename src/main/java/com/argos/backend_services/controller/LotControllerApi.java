@@ -1,7 +1,10 @@
 package com.argos.backend_services.controller;
+
+import com.argos.backend_services.controller.annotation.CurrentUser;
 import com.argos.backend_services.dto.in.LotIn;
 import com.argos.backend_services.dto.out.LotOut;
 import com.argos.backend_services.exception.LotNotFoundException;
+import com.argos.backend_services.security.CurrentUserData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -27,7 +30,7 @@ public interface LotControllerApi {
             @ApiResponse(responseCode = "400", description = "Parâmetros inválidos", content = @Content(schema = @Schema(example = "{\"message\":\"Parâmetro inválido\"}"))),
             @ApiResponse(responseCode = "422", description = "Não foi possível processar a solicitação", content = @Content(examples = @ExampleObject(value = "{\"message\":\"Falha ao consultar lotes\"}")))
     })
-    ResponseEntity<List<LotOut>> listLot(@RequestHeader UUID userId);
+    ResponseEntity<List<LotOut>> listLot(@CurrentUser CurrentUserData currentUser);
 
     @PostMapping
     @Operation(summary = "Cadastra lote", description = "Busca o rebanho pelo nome antes de cadastrar.")
@@ -36,7 +39,8 @@ public interface LotControllerApi {
             @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos", content = @Content(examples = @ExampleObject(value = "{\"message\":\"herdName não pode ser vazio\"}"))),
             @ApiResponse(responseCode = "422", description = "Rebanho não encontrado ou regra de negócio inválida", content = @Content(examples = @ExampleObject(value = "{\"message\":\"Herd not found\"}")))
     })
-    ResponseEntity<Void> registerLot(@Valid @RequestBody LotIn lotIn) throws LotNotFoundException;
+    ResponseEntity<Void> registerLot(@Valid @RequestBody LotIn lotIn,
+                                     @CurrentUser CurrentUserData currentUser) throws LotNotFoundException;
 
     @DeleteMapping("/{lotId}")
     @Operation(summary = "Exclui lote", description = "Executa exclusão lógica.")
@@ -45,5 +49,6 @@ public interface LotControllerApi {
             @ApiResponse(responseCode = "400", description = "Identificador inválido", content = @Content(examples = @ExampleObject(value = "{\"message\":\"lotId inválido\"}"))),
             @ApiResponse(responseCode = "422", description = "Lote não encontrado ou não pode ser excluído", content = @Content(examples = @ExampleObject(value = "{\"message\":\"Lot not found\"}")))
     })
-    ResponseEntity<Void> deleteLot(@PathVariable UUID lotId, @RequestHeader UUID userId) throws LotNotFoundException;
+    ResponseEntity<Void> deleteLot(@PathVariable UUID lotId,
+                                   @CurrentUser CurrentUserData currentUser) throws LotNotFoundException;
 }

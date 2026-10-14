@@ -18,5 +18,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID> {
 
     Optional<Property> findByIdAndUser_Id(UUID propertyId, UUID administratorId);
 
+    boolean existsByIdAndUser_IdAndActiveTrue(UUID propertyId, UUID userId);
+
     boolean existsByUser_Id(UUID userId);
 }

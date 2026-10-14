@@ -65,8 +65,7 @@ class ApplicationServiceTest {
         Lot lot = Lot.builder().id(lotId).lotCode("LOTE-001")
                 .herdId(Herd.builder().propertyId(Property.builder().id(propertyId).build()).build()).build();
         Medicine medicine = Medicine.builder().id(medicineId).brandName("Ivermectina").build();
-        MedicineBatch batch = MedicineBatch.builder().id(batchId).medicineId(medicine)
-                .property(Property.builder().id(propertyId).build()).build();
+        MedicineBatch batch = MedicineBatch.builder().id(batchId).medicineId(medicine).build();
         ApplicationIn input = ApplicationIn.builder()
                 .lotName("LOTE-001").medicineName("Ivermectina")
                 .dose(new BigDecimal("10.5")).unit("ML").route("ORAL")
@@ -74,7 +73,7 @@ class ApplicationServiceTest {
 
         when(lotRepository.findWithHerdAndPropertyByLotCode("LOTE-001")).thenReturn(Optional.of(lot));
         when(medicineRepository.findByBrandName("Ivermectina")).thenReturn(Optional.of(medicine));
-        when(medicineBatchRepository.findByMedicineIdAndProperty_Id(medicine, propertyId)).thenReturn(Optional.of(batch));
+        when(medicineBatchRepository.findByMedicineId(medicine)).thenReturn(Optional.of(batch));
 
         service.registerApplication(input, userId);
 

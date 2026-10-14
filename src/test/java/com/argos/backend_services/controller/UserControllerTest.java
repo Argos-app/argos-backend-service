@@ -8,6 +8,10 @@ import com.argos.backend_services.dto.in.UpdateCurrentUserIn;
 import com.argos.backend_services.dto.out.CreateUserOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.dto.out.UserPropertyOut;
+import com.argos.backend_services.dto.out.UserProfileOut;
+import com.argos.backend_services.dto.out.CurrentUserAccessOut;
+import com.argos.backend_services.entity.AppUser;
+import com.argos.backend_services.entity.Permission;
 import com.argos.backend_services.security.CurrentUserData;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import com.argos.backend_services.exception.BadRequestException;
@@ -15,6 +19,8 @@ import com.argos.backend_services.service.JwtService;
 import com.argos.backend_services.service.UserService;
 import com.argos.backend_services.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -22,13 +28,17 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -37,7 +47,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtService.class})
+@TestPropertySource(properties = {
+        "security.jwt.secret=test-secret-minimo-32-caracteres-para-hs256",
+        "security.jwt.expiration-ms=86400000"
+})
 public class UserControllerTest {
     private static final UUID ADMINISTRATOR_ID = UUID.randomUUID();
 
@@ -64,7 +78,7 @@ public class UserControllerTest {
     @MockBean
     private UserService userService;
 
-    @MockBean
+    @Autowired
     private JwtService jwtService;
 
     @MockBean
@@ -165,5 +179,84 @@ public class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(HttpStatus.BAD_REQUEST.toString()))
                 .andExpect(jsonPath("$.informationCode").value("BAD_REQUEST"));
+    }
+
+    private String profileToken(UUID userId, String code) {
+        return jwtService.generate(AppUser.builder().id(userId).name("Old claim").email("old@test.invalid")
+                .permission(Permission.builder().code(code).name(code).build()).build());
+    }
+
+    private CurrentUserAccessOut currentAccess(boolean accountActive, boolean permissionActive, String code) {
+        return new CurrentUserAccessOut() {
+            public Boolean getUserActive() { return accountActive; }
+            public Boolean getPermissionActive() { return permissionActive; }
+            public String getPermissionCode() { return code; }
+        };
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"USER", "ADMIN"})
+    void shouldReadOnlyThePrincipalProfileRegardlessOfClientId(String code) throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findCurrentAccessById(userId)).thenReturn(Optional.of(currentAccess(true, true, code)));
+        when(userService.getMyProfile(userId)).thenReturn(new UserProfileOut(userId, "Current name",
+                "current@test.invalid", "12345678901", null, "Current permission", code, true, List.of()));
+
+        mockMvc.perform(get("/users/me").header("Authorization", "Bearer " + profileToken(userId, code))
+                        .param("userId", UUID.randomUUID().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(userId.toString()))
+                .andExpect(jsonPath("$.name").value("Current name"))
+                .andExpect(jsonPath("$.email").value("current@test.invalid"))
+                .andExpect(jsonPath("$.permissionCode").value(code))
+                .andExpect(jsonPath("$.properties").isEmpty());
+        verify(userService).getMyProfile(userId);
+        verifyNoMoreInteractions(userService);
+    }
+
+    @Test
+    void shouldRequireAuthenticationForProfile() throws Exception {
+        mockMvc.perform(get("/users/me")).andExpect(status().isUnauthorized());
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldRejectInvalidProfileToken() throws Exception {
+        mockMvc.perform(get("/users/me").header("Authorization", "Bearer invalid"))
+                .andExpect(status().isUnauthorized());
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldRejectExpiredProfileToken() throws Exception {
+        String token = new JwtService("test-secret-minimo-32-caracteres-para-hs256", -1000)
+                .generate(AppUser.builder().id(UUID.randomUUID()).name("Test user").email("user@test.invalid")
+                        .permission(Permission.builder().code("USER").name("Operador").build()).build());
+
+        mockMvc.perform(get("/users/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+        verifyNoInteractions(userRepository, userService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"missing", "account-inactive", "permission-inactive"})
+    void shouldRejectRevokedProfileAccess(String reason) throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findCurrentAccessById(userId)).thenReturn(reason.equals("missing") ? Optional.empty()
+                : Optional.of(currentAccess(!reason.equals("account-inactive"), !reason.equals("permission-inactive"), "USER")));
+
+        mockMvc.perform(get("/users/me").header("Authorization", "Bearer " + profileToken(userId, "USER")))
+                .andExpect(status().isUnauthorized());
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldPreserveAdministrativeRestrictionsWithUserToken() throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findCurrentAccessById(userId)).thenReturn(Optional.of(currentAccess(true, true, "USER")));
+
+        mockMvc.perform(get("/users").header("Authorization", "Bearer " + profileToken(userId, "USER")))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(userService);
     }
 }

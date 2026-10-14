@@ -9,6 +9,7 @@ import com.argos.backend_services.dto.out.CreateUserOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.dto.out.UserPropertyOut;
+import com.argos.backend_services.dto.out.UserProfileOut;
 import com.argos.backend_services.dto.out.UserAccessOut;
 import com.argos.backend_services.dto.out.UserCreationOptionsOut;
 import com.argos.backend_services.dto.out.UserOptionOut;
@@ -20,6 +21,7 @@ import com.argos.backend_services.entity.Property;
 import com.argos.backend_services.entity.UserProperty;
 import com.argos.backend_services.exception.BadRequestException;
 import com.argos.backend_services.exception.NotFoundException;
+import com.argos.backend_services.exception.UnauthorizedException;
 import com.argos.backend_services.repository.PermissionRepository;
 import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.repository.UserPropertyRepository;
@@ -28,7 +30,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthErrorCode;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +59,17 @@ public class UserService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class);
 
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(readOnly = true)
+    public UserProfileOut getMyProfile(UUID userId) {
+        AppUser user = userRepository.findActiveProfileById(userId)
+                .orElseThrow(() -> new UnauthorizedException("Sessão não autorizada"));
+        Permission permission = user.getPermission();
+        return new UserProfileOut(user.getId(), user.getName(), user.getEmail(), user.getCpf(),
+                user.getPhotoUrl(), permission.getName(), permission.getCode(),
+                Boolean.TRUE.equals(user.getActive()), userPropertyRepository.findActiveProfileProperties(userId));
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public UserCreationOptionsOut getCreationOptions(UUID administratorId) {
         List<UserOptionOut> properties = propertyRepository.findByUser_IdAndActiveTrueOrderByNameAsc(administratorId).stream()
                 .map(property -> new UserOptionOut(property.getId(), property.getName()))
@@ -67,14 +80,14 @@ public class UserService {
         return new UserCreationOptionsOut(properties, permissions);
     }
 
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public List<UserOptionOut> getActivePermissions() {
         return permissionRepository.findByActiveOrderByNameAsc(true).stream()
                 .map(permission -> new UserOptionOut(permission.getId(), permission.getName()))
                 .toList();
     }
 
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public PageOut<UserAccessOut> listUserAccesses(int page, int size, UUID administratorId) {
         if (page < 0 || size < 1 || size > 100) {
             throw new BadRequestException("Parâmetros de paginação inválidos");
@@ -129,6 +142,7 @@ public class UserService {
     }
 
     @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public PageOut<AdminUserOptionOut> listAdministrators(int page, int size, UUID administratorId) {
         if (page < 0 || size < 1 || size > 100) {
             throw new BadRequestException("Parâmetros de paginação inválidos");
@@ -297,7 +311,7 @@ public class UserService {
         }
     }
 
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
     public PageOut<UserListItemOut> listUsers(int page, int size, UUID administratorId) {
         if (page < 0 || size < 1 || size > 100) {
             throw new BadRequestException("Parâmetros de paginação inválidos");

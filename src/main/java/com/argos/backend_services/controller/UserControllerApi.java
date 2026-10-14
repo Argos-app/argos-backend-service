@@ -12,6 +12,7 @@ import com.argos.backend_services.dto.out.UserAccessOut;
 import com.argos.backend_services.dto.out.UserCreationOptionsOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.dto.out.UserOptionOut;
+import com.argos.backend_services.dto.out.UserProfileOut;
 import com.argos.backend_services.security.CurrentUserData;
 import com.argos.backend_services.controller.annotation.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +32,16 @@ import java.util.UUID;
 @RequestMapping("/users")
 @Tag(name = "Users", description = "Rotas de gestão de usuários e seus acessos")
 public interface UserControllerApi {
+
+    @GetMapping("/me")
+    @Operation(summary = "Consulta o perfil do usuário autenticado",
+            description = "Retorna dados pessoais, acesso atual e todos os vínculos ativos em fazendas ativas do próprio usuário.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Perfil encontrado", content = @Content(schema = @Schema(implementation = UserProfileOut.class))),
+            @ApiResponse(responseCode = "401", description = "Sessão ausente/inválida, usuário inexistente ou conta/permissão inativa")
+    })
+    ResponseEntity<UserProfileOut> getMyProfile(
+            @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser);
 
     @GetMapping("/options")
     @Operation(summary = "Lista opções para criação e edição de usuário")

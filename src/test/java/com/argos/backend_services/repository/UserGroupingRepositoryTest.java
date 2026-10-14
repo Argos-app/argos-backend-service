@@ -72,6 +72,51 @@ class UserGroupingRepositoryTest {
         assertThat(result).allMatch(link -> link.getUser().getId().equals(firstUser.getId()));
     }
 
+    @Test
+    void shouldLoadProfileFarmsAcrossOwnersAndExcludeInactiveLinksAndFarms() {
+        Property unlinked = farm("Unlinked", administrator, true);
+        em.persist(UserProperty.builder().user(em.getReference(AppUser.class, firstUser.getId()))
+                .property(unlinked).linkDate(LocalDate.of(2026, 1, 15)).active(false).build());
+        em.flush();
+        em.clear();
+
+        var result = links.findActiveProfileProperties(firstUser.getId());
+
+        assertThat(result).extracting(item -> item.name()).containsExactly("Alpha", "Foreign", "Zeta");
+        assertThat(result).extracting(item -> item.id()).doesNotHaveDuplicates();
+        assertThat(links.findActiveProfileProperties(secondUser.getId()))
+                .extracting(item -> item.name()).containsExactly("Zeta");
+        assertThat(links.findActiveProfileProperties(administrator.getId())).isEmpty();
+    }
+
+    @Test
+    void shouldFetchCurrentProfileAndPermissionWithoutRequiringFarmLinks() {
+        var result = users.findActiveProfileById(administrator.getId()).orElseThrow();
+
+        assertThat(result.getName()).isEqualTo("Owner A");
+        assertThat(em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(result, "permission")).isTrue();
+        assertThat(result.getPermission().getName()).isEqualTo("Administrator");
+        assertThat(users.findActiveProfileById(java.util.UUID.randomUUID())).isEmpty();
+    }
+
+    @Test
+    void shouldRejectInactiveAccountsInProfileQuery() {
+        em.find(AppUser.class, firstUser.getId()).setActive(false);
+        em.flush();
+        em.clear();
+
+        assertThat(users.findActiveProfileById(firstUser.getId())).isEmpty();
+    }
+
+    @Test
+    void shouldRejectInactivePermissionsInProfileQuery() {
+        em.find(Permission.class, permission.getId()).setActive(false);
+        em.flush();
+        em.clear();
+
+        assertThat(users.findActiveProfileById(firstUser.getId())).isEmpty();
+    }
+
     private AppUser user(String name) {
         var value = AppUser.builder().name(name).email("grouping" + (++sequence) + "@test.invalid")
                 .cpf("%011d".formatted(sequence)).permission(permission).active(true).build();

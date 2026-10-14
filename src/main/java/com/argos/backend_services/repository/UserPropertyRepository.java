@@ -13,6 +13,10 @@ import java.util.UUID;
 public interface UserPropertyRepository extends JpaRepository<UserProperty, UserPropertyId> {
     List<UserProperty> findAllByProperty_IdAndActiveTrue(UUID propertyId);
 
+    boolean existsByUser_IdAndProperty_IdAndActiveTrue(UUID userId, UUID propertyId);
+
+    List<UserProperty> findByUser_IdAndActiveTrue(UUID userId);
+
     @Query("""
             select new com.argos.backend_services.dto.out.UserProfilePropertyOut(p.id, p.name)
             from UserProperty up join up.property p

@@ -13,6 +13,7 @@ import com.argos.backend_services.repository.MedicineRepository;
 import com.argos.backend_services.repository.StockMovementRepository;
 import com.argos.backend_services.repository.SupplierRepository;
 import com.argos.backend_services.repository.UserRepository;
+import com.argos.backend_services.repository.PropertyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,6 +39,8 @@ class MedicineServiceTest {
     private SupplierRepository supplierRepository;
     private StockMovementRepository stockMovementRepository;
     private UserRepository userRepository;
+    private PropertyRepository propertyRepository;
+    private PropertyAccessService propertyAccessService;
     private DatabaseRoutineRepository databaseRoutineRepository;
     private MedicineMapper medicineMapper;
     private MedicineService service;
@@ -50,10 +53,13 @@ class MedicineServiceTest {
         supplierRepository = mock(SupplierRepository.class);
         stockMovementRepository = mock(StockMovementRepository.class);
         userRepository = mock(UserRepository.class);
+        propertyRepository = mock(PropertyRepository.class);
+        propertyAccessService = mock(PropertyAccessService.class);
         databaseRoutineRepository = mock(DatabaseRoutineRepository.class);
         medicineMapper = mock(MedicineMapper.class);
         service = new MedicineService(medicineRepository, medicineBatchRepository, supplierRepository,
-                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock);
+                stockMovementRepository, userRepository, propertyRepository, propertyAccessService,
+                databaseRoutineRepository, medicineMapper, clock);
     }
 
     @Test
@@ -65,8 +71,10 @@ class MedicineServiceTest {
         var input = validInput();
 
         when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
-        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber())).thenReturn(false);
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumberAndProperty_Id(
+                medicine, input.batchNumber(), input.propertyId())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(propertyRepository.getReferenceById(input.propertyId())).thenReturn(com.argos.backend_services.entity.Property.builder().id(input.propertyId()).build());
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.empty());
         when(supplierRepository.save(any(Supplier.class))).thenReturn(supplier);
         when(medicineBatchRepository.save(any(MedicineBatch.class))).thenAnswer(invocation -> {
@@ -95,7 +103,7 @@ class MedicineServiceTest {
     @Test
     void shouldRejectNonFutureExpiryDateBeforeAccessingRepositories() {
         var input = new MedicineBatchIn("12345", "LOTE-1", LocalDate.of(2026, 1, 10),
-                LocalDate.of(2026, 10, 11), new BigDecimal("5.000"), "Fornecedor", "12345678000199");
+                LocalDate.of(2026, 10, 11), new BigDecimal("5.000"), "Fornecedor", "12345678000199", UUID.randomUUID());
 
         assertThatThrownBy(() -> service.registerBatch(input, UUID.randomUUID()))
                 .isInstanceOf(BadRequestException.class)
@@ -113,8 +121,10 @@ class MedicineServiceTest {
         var input = validInput();
 
         when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
-        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber())).thenReturn(false);
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumberAndProperty_Id(
+                medicine, input.batchNumber(), input.propertyId())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(propertyRepository.getReferenceById(input.propertyId())).thenReturn(com.argos.backend_services.entity.Property.builder().id(input.propertyId()).build());
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.of(supplier));
         when(medicineBatchRepository.save(any(MedicineBatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -127,6 +137,6 @@ class MedicineServiceTest {
     private MedicineBatchIn validInput() {
         return new MedicineBatchIn("12345", "LOTE-001", LocalDate.of(2026, 1, 10),
                 LocalDate.of(2027, 1, 10), new BigDecimal("500.000"),
-                "Fornecedor Teste", "12345678000199");
+                "Fornecedor Teste", "12345678000199", UUID.randomUUID());
     }
 }

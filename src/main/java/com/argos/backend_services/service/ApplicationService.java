@@ -23,16 +23,20 @@ public class ApplicationService {
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final ApplicationAnimalRepository applicationAnimalRepository;
     private final ApplicationMapper mapper;
+    private final PropertyAccessService propertyAccessService;
 
     public void registerApplication(ApplicationIn applicationIn, UUID userId) throws LotNotFoundException, MedicineNotFoundException {
 
-        var lot = lotRepository.findByLotCode(applicationIn.lotName())
+        var lot = lotRepository.findWithHerdAndPropertyByLotCode(applicationIn.lotName())
                 .orElseThrow(() -> new LotNotFoundException("Não foi possível achar o lot pelo nome"));
+
+        var propertyId = lot.getHerdId().getPropertyId().getId();
+        propertyAccessService.requireActiveAccess(userId, propertyId);
 
         var medicine = medicineRepository.findByBrandName(applicationIn.medicineName())
                 .orElseThrow(() -> new MedicineNotFoundException("Could not found medicine by name"));
 
-        var medicineBatch = medicineBatchRepository.findByMedicineId(medicine)
+        var medicineBatch = medicineBatchRepository.findByMedicineIdAndProperty_Id(medicine, propertyId)
                 .orElseThrow(() -> new MedicineNotFoundException("Could not found medicine batch by medicine id"));
 
         databaseRoutineRepository.registerApplication
@@ -45,8 +49,12 @@ public class ApplicationService {
                 applicationIn.goal());
     }
 
-    public List<ApplicationOut> listApplication() {
-        var applications = applicationRepository.findAll();
+    public List<ApplicationOut> listApplication(UUID userId) {
+        var propertyIds = propertyAccessService.activePropertyIds(userId);
+        if (propertyIds.isEmpty()) {
+            return List.of();
+        }
+        var applications = applicationRepository.findByLotId_HerdId_PropertyId_IdIn(propertyIds);
         var result = mapper.listToOut(applications);
         if (applicationAnimalRepository != null) {
             applications.forEach(application -> applicationAnimalRepository.findByApplicationId(application)

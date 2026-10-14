@@ -12,10 +12,10 @@ import com.argos.backend_services.repository.AnimalExceptionRepository;
 import com.argos.backend_services.repository.ApplicationAnimalRepository;
 import com.argos.backend_services.repository.DatabaseRoutineRepository;
 import com.argos.backend_services.repository.LotRepository;
-import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.utils.PageableUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +29,7 @@ public class AnimalExceptionService {
     private final AnimalExceptionRepository animalExceptionRepository;
     private final ApplicationAnimalRepository applicationAnimalRepository;
     private final LotRepository lotRepository;
-    private final PropertyRepository propertyRepository;
+    private final PropertyAccessService propertyAccessService;
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final AnimalExceptionMapper mapper;
 
@@ -37,7 +37,7 @@ public class AnimalExceptionService {
         var originLot = lotRepository.findWithHerdAndPropertyById(input.originLotId())
                 .orElseThrow(() -> new LotNotFoundException("Lote de origem não encontrado: " + input.originLotId()));
 
-        validateLotAccess(originLot.getHerdId().getPropertyId().getId(), propertyIdsByUser(userId));
+        propertyAccessService.requireActiveAccess(userId, originLot.getHerdId().getPropertyId().getId());
         if (!originLot.isActive()) {
             throw new BadRequestException("Lote de origem não está ativo");
         }
@@ -52,11 +52,10 @@ public class AnimalExceptionService {
     @Transactional(readOnly = true)
     public PageOut<AnimalExceptionOut> list(Boolean active, UUID originId, UUID userId, int page, int size) {
         var pageable = PageableUtils.createPageRequest(page, size, Sort.by(Sort.Direction.DESC, "exceptionDate"));
-        var exceptions = animalExceptionRepository.findAllByFilters(
-                active,
-                originId,
-                propertyIdsByUser(userId),
-                pageable);
+        var propertyIds = propertyAccessService.activePropertyIds(userId);
+        Page<AnimalException> exceptions = propertyIds.isEmpty()
+                ? Page.empty(pageable)
+                : animalExceptionRepository.findAllByFilters(active, originId, propertyIds, pageable);
 
         var animalApplications = exceptions.isEmpty()
                 ? List.<ApplicationAnimal>of()
@@ -77,19 +76,4 @@ public class AnimalExceptionService {
                 exceptions.isLast());
     }
 
-    private List<UUID> propertyIdsByUser(UUID userId) {
-        var propertyIds = propertyRepository.findByUserIdAndActiveTrue(userId).stream()
-                .map(property -> property.getId())
-                .toList();
-        if (propertyIds.isEmpty()) {
-            throw new BadRequestException("Usuário não possui fazenda ativa");
-        }
-        return propertyIds;
-    }
-
-    private void validateLotAccess(UUID lotPropertyId, List<UUID> userPropertyIds) {
-        if (!userPropertyIds.contains(lotPropertyId)) {
-            throw new BadRequestException("Lote de origem não pertence a uma fazenda do usuário");
-        }
-    }
 }

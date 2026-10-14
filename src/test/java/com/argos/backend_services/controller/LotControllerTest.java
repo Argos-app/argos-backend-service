@@ -5,6 +5,7 @@ import com.argos.backend_services.dto.in.LotIn;
 import com.argos.backend_services.dto.out.LotOut;
 import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.service.LotService;
+import com.argos.backend_services.security.CurrentUserData;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.UUID;
@@ -15,17 +16,19 @@ class LotControllerTest {
     @Test void shouldReturnLots() {
         var service = mock(LotService.class); var controller = new LotController(service); var user = UUID.randomUUID(); var expected = List.of(LotOut.builder().lotName("L-1").build());
         when(service.listLot(user)).thenReturn(expected);
-        var response = controller.listLot(user);
+        var response = controller.listLot(currentUser(user));
         assertThat(response.getStatusCode().value()).isEqualTo(200); assertThat(response.getBody()).isEqualTo(expected); verify(service).listLot(user);
     }
     @Test void shouldRegisterLotAndReturnOk() throws LotNotFoundException {
         var service = mock(LotService.class); var controller = new LotController(service); var input = LotIn.builder().lotName("L-1").herdName("H-1").build();
-        var response = controller.registerLot(input);
-        assertThat(response.getStatusCode().value()).isEqualTo(200); verify(service).registerLot(input);
+        var user = UUID.randomUUID();
+        var response = controller.registerLot(input, currentUser(user));
+        assertThat(response.getStatusCode().value()).isEqualTo(200); verify(service).registerLot(input, user);
     }
     @Test void shouldDeleteLotAndReturnNoContent() throws LotNotFoundException {
         var service = mock(LotService.class); var controller = new LotController(service); var id = UUID.randomUUID(); var user = UUID.randomUUID();
-        var response = controller.deleteLot(id, user);
+        var response = controller.deleteLot(id, currentUser(user));
         assertThat(response.getStatusCode().value()).isEqualTo(204); verify(service).deleteLot(id, user);
     }
+    private CurrentUserData currentUser(UUID userId) { return new CurrentUserData(userId, "user@argos.com", "User", "USER", null); }
 }

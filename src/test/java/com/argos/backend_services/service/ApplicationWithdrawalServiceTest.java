@@ -22,6 +22,7 @@ class ApplicationWithdrawalServiceTest {
     private ApplicationRepository applicationRepository;
     private DatabaseRoutineRepository databaseRoutineRepository;
     private ApplicationWithdrawalMapper mapper;
+    private PropertyAccessService propertyAccessService;
     private ApplicationWithdrawalService service;
 
     @BeforeEach
@@ -29,45 +30,54 @@ class ApplicationWithdrawalServiceTest {
         applicationRepository = mock(ApplicationRepository.class);
         databaseRoutineRepository = mock(DatabaseRoutineRepository.class);
         mapper = mock(ApplicationWithdrawalMapper.class);
-        service = new ApplicationWithdrawalService(applicationRepository, databaseRoutineRepository, mapper);
+        propertyAccessService = mock(PropertyAccessService.class);
+        service = new ApplicationWithdrawalService(applicationRepository, databaseRoutineRepository, mapper, propertyAccessService);
     }
 
     @Test
     void shouldMapApplicationsInConfiguredDateWindow() throws InvalidDateWindowException {
         var referenceDate = LocalDate.of(2026, 9, 20);
+        var userId = UUID.randomUUID();
+        var propertyIds = List.of(UUID.randomUUID());
         var application = Application.builder().id(UUID.randomUUID()).build();
         var expected = ApplicationWithdrawalOut.builder().applicationId(application.getId()).build();
-        when(applicationRepository.findByMeatWithdrawalEndBetween(referenceDate.minusDays(7), referenceDate.plusDays(7)))
+        when(propertyAccessService.activePropertyIds(userId)).thenReturn(propertyIds);
+        when(applicationRepository.findByMeatWithdrawalEndBetweenAndLotId_HerdId_PropertyId_IdIn(referenceDate.minusDays(7), referenceDate.plusDays(7), propertyIds))
                 .thenReturn(List.of(application));
         when(mapper.toOut(application, referenceDate)).thenReturn(expected);
 
-        assertThat(service.findNearDate(referenceDate, 7, 7)).containsExactly(expected);
+        assertThat(service.findNearDate(referenceDate, 7, 7, userId)).containsExactly(expected);
         verify(mapper).toOut(application, referenceDate);
     }
 
     @Test
     void shouldRejectNegativeDateWindow() {
-        assertThatThrownBy(() -> service.findNearDate(LocalDate.now(), -1, 7))
+        assertThatThrownBy(() -> service.findNearDate(LocalDate.now(), -1, 7, UUID.randomUUID()))
                 .isInstanceOf(InvalidDateWindowException.class);
         verifyNoInteractions(applicationRepository, mapper);
     }
 
     @Test
     void shouldWrapRepositoryFailure() {
-        when(applicationRepository.findByMeatWithdrawalEndBetween(any(), any()))
+        var userId = UUID.randomUUID();
+        when(propertyAccessService.activePropertyIds(userId)).thenReturn(List.of(UUID.randomUUID()));
+        when(applicationRepository.findByMeatWithdrawalEndBetweenAndLotId_HerdId_PropertyId_IdIn(any(), any(), any()))
                 .thenThrow(new RuntimeException("database unavailable"));
 
-        assertThatThrownBy(() -> service.findNearDate(LocalDate.now(), 7, 7))
+        assertThatThrownBy(() -> service.findNearDate(LocalDate.now(), 7, 7, userId))
                 .isInstanceOf(ApplicationWithdrawalRoutineException.class);
     }
 
     @Test
     void shouldReturnEmptyWindowWhenThereAreNoApplications() throws InvalidDateWindowException {
         var referenceDate = LocalDate.of(2026, 9, 20);
-        when(applicationRepository.findByMeatWithdrawalEndBetween(referenceDate.minusDays(7), referenceDate.plusDays(7)))
+        var userId = UUID.randomUUID();
+        var propertyIds = List.of(UUID.randomUUID());
+        when(propertyAccessService.activePropertyIds(userId)).thenReturn(propertyIds);
+        when(applicationRepository.findByMeatWithdrawalEndBetweenAndLotId_HerdId_PropertyId_IdIn(referenceDate.minusDays(7), referenceDate.plusDays(7), propertyIds))
                 .thenReturn(List.of());
 
-        assertThat(service.findNearDate(referenceDate, 7, 7)).isEmpty();
+        assertThat(service.findNearDate(referenceDate, 7, 7, userId)).isEmpty();
         verifyNoInteractions(mapper);
     }
 }

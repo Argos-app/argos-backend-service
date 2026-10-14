@@ -8,7 +8,6 @@ import com.argos.backend_services.exception.MedicineNotFoundException;
 import com.argos.backend_services.repository.AnimalExceptionRepository;
 import com.argos.backend_services.repository.DatabaseRoutineRepository;
 import com.argos.backend_services.repository.MedicineBatchRepository;
-import com.argos.backend_services.repository.PropertyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,14 +21,15 @@ public class AnimalApplicationService {
 
     private final AnimalExceptionRepository animalExceptionRepository;
     private final MedicineBatchRepository medicineBatchRepository;
-    private final PropertyRepository propertyRepository;
+    private final PropertyAccessService propertyAccessService;
     private final DatabaseRoutineRepository databaseRoutineRepository;
 
     public void register(UUID animalExceptionId, AnimalApplicationIn input, UUID userId)
             throws MedicineNotFoundException {
         var animalException = animalExceptionRepository.findWithLotsById(animalExceptionId)
                 .orElseThrow(() -> new AnimalExceptionNotFoundException(animalExceptionId));
-        validateAnimalAccess(animalException, propertyIdsByUser(userId));
+        var propertyId = animalException.getOriginLotId().getHerdId().getPropertyId().getId();
+        propertyAccessService.requireActiveAccess(userId, propertyId);
 
         if (animalException.getStatus() != AnimalException.StatusAnimal.ATIVO) {
             throw new BadRequestException("Aplicações individuais só podem ser registradas para exceções ativas");
@@ -37,6 +37,10 @@ public class AnimalApplicationService {
 
         var medicineBatch = medicineBatchRepository.findById(input.medicineBatchId())
                 .orElseThrow(() -> new MedicineNotFoundException("Lote de medicamento não encontrado"));
+
+        if (!propertyId.equals(medicineBatch.getProperty().getId())) {
+            throw new MedicineNotFoundException("Lote de medicamento não encontrado para a propriedade da exceção");
+        }
 
         databaseRoutineRepository.registerAnimalApplication(
                 animalExceptionId,
@@ -59,19 +63,4 @@ public class AnimalApplicationService {
         }
     }
 
-    private List<UUID> propertyIdsByUser(UUID userId) {
-        var propertyIds = propertyRepository.findByUserIdAndActiveTrue(userId).stream()
-                .map(property -> property.getId())
-                .toList();
-        if (propertyIds.isEmpty()) {
-            throw new BadRequestException("Usuário não possui fazenda ativa");
-        }
-        return propertyIds;
-    }
-
-    private void validateAnimalAccess(AnimalException animalException, List<UUID> userPropertyIds) {
-        if (!userPropertyIds.contains(animalException.getOriginLotId().getHerdId().getPropertyId().getId())) {
-            throw new BadRequestException("Exceção animal não pertence a uma fazenda do usuário");
-        }
-    }
 }

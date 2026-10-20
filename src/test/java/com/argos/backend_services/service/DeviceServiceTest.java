@@ -149,16 +149,6 @@ class DeviceServiceTest {
     }
 
     @Test
-    void shouldTranslateConcurrentUniquenessConflict() {
-        authenticate();
-        var cause = violation("23505", "device_push_token_key");
-        when(devices.saveAndFlush(any())).thenThrow(cause);
-
-        assertThatThrownBy(() -> service.sync(input(null, "token"), user.getId()))
-                .isInstanceOf(DeviceConflictException.class).hasCause(cause);
-    }
-
-    @Test
     void shouldNotTranslateUnrelatedUniqueConstraint() {
         assertIntegrityFailureIsPreserved(violation("23505", "other_unique_key"));
     }

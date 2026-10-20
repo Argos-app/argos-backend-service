@@ -56,11 +56,7 @@ public class CustomGlobalException {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiError> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
-        // Não inclui rejectedValue, que pode conter tokens ou senhas.
-        var message = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(java.util.stream.Collectors.joining("; "));
-        var error = new ApiError(message, HttpStatus.BAD_REQUEST.toString(), "METHOD_ARGUMENT_NOT_VALID");
+        var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "METHOD_ARGUMENT_NOT_VALID");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 

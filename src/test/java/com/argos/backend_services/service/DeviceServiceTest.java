@@ -44,7 +44,7 @@ class DeviceServiceTest {
     }
 
     @Test
-    void shouldCreateDeviceAndReturnGeneratedId() {
+    void shouldCreateDeviceAndReturnGeneratedId() throws DeviceConflictException {
         authenticate();
         UUID generatedId = UUID.randomUUID();
         when(devices.saveAndFlush(any(Device.class))).thenAnswer(invocation -> {
@@ -70,7 +70,7 @@ class DeviceServiceTest {
     }
 
     @Test
-    void shouldReuseDeviceWhenIdWasLostButTokenBelongsToSameUser() {
+    void shouldReuseDeviceWhenIdWasLostButTokenBelongsToSameUser() throws DeviceConflictException {
         authenticate();
         var device = device();
         when(devices.findByPushToken("token")).thenReturn(Optional.of(device));
@@ -82,7 +82,7 @@ class DeviceServiceTest {
     }
 
     @Test
-    void shouldRotateTokenAndReactivateWithoutChangingIdentityOrCreationDate() {
+    void shouldRotateTokenAndReactivateWithoutChangingIdentityOrCreationDate() throws DeviceConflictException {
         var device = device();
         device.setActive(false);
         device.setPushToken(null);
@@ -100,7 +100,7 @@ class DeviceServiceTest {
     }
 
     @Test
-    void shouldAcceptUnchangedTokenWithExplicitId() {
+    void shouldAcceptUnchangedTokenWithExplicitId() throws DeviceConflictException {
         var device = device();
         when(devices.findByIdAndUser_Id(device.getId(), user.getId())).thenReturn(Optional.of(device));
         when(devices.saveAndFlush(device)).thenReturn(device);

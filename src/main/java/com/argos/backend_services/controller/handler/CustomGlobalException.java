@@ -1,11 +1,17 @@
 package com.argos.backend_services.controller.handler;
 
 import com.argos.backend_services.exception.BadRequestException;
+import com.argos.backend_services.exception.DeviceConflictException;
 import com.argos.backend_services.exception.ArgosBadRequestException;
 import com.argos.backend_services.exception.ArgosInternalServerException;
 import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.exception.UnauthorizedException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.transaction.TransactionTimedOutException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -14,7 +20,31 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
+@Slf4j
 public class CustomGlobalException {
+    @ExceptionHandler({PessimisticLockingFailureException.class, QueryTimeoutException.class,
+            TransactionTimedOutException.class})
+    ResponseEntity<ApiError> handleDatabaseTimeout(RuntimeException ex) {
+        log.warn("database_temporarily_unavailable exceptionType={}", ex.getClass().getSimpleName());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ApiError("Operação temporariamente indisponível. Tente novamente.",
+                        HttpStatus.SERVICE_UNAVAILABLE.toString(), "DATABASE_BUSY"));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ResponseEntity<ApiError> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        log.error("database_integrity_failure exceptionType={}", ex.getMostSpecificCause().getClass().getSimpleName());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiError("Não foi possível persistir os dados", HttpStatus.INTERNAL_SERVER_ERROR.toString(),
+                        "DATA_INTEGRITY_ERROR"));
+    }
+
+    @ExceptionHandler(DeviceConflictException.class)
+    ResponseEntity<ApiError> handleDeviceConflictException(DeviceConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiError(ex.getMessage(), HttpStatus.CONFLICT.toString(), "DEVICE_CONFLICT"));
+    }
+
     @ExceptionHandler(ResponseStatusException.class)
     ResponseEntity<ApiError> handleResponseStatusException(ResponseStatusException ex) {
         return ResponseEntity.status(ex.getStatusCode()).body(new ApiError(
@@ -47,7 +77,11 @@ public class CustomGlobalException {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiError> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
-        var error = new ApiError(ex.getMessage(), HttpStatus.BAD_REQUEST.toString(), "METHOD_ARGUMENT_NOT_VALID");
+        // Não inclui rejectedValue, que pode conter tokens ou senhas.
+        var message = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(java.util.stream.Collectors.joining("; "));
+        var error = new ApiError(message, HttpStatus.BAD_REQUEST.toString(), "METHOD_ARGUMENT_NOT_VALID");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 

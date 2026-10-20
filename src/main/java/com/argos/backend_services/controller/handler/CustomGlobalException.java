@@ -8,10 +8,6 @@ import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.exception.UnauthorizedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.PessimisticLockingFailureException;
-import org.springframework.dao.QueryTimeoutException;
-import org.springframework.transaction.TransactionTimedOutException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -22,23 +18,6 @@ import org.springframework.web.server.ResponseStatusException;
 @RestControllerAdvice
 @Slf4j
 public class CustomGlobalException {
-    @ExceptionHandler({PessimisticLockingFailureException.class, QueryTimeoutException.class,
-            TransactionTimedOutException.class})
-    ResponseEntity<ApiError> handleDatabaseTimeout(RuntimeException ex) {
-        log.warn("database_temporarily_unavailable exceptionType={}", ex.getClass().getSimpleName());
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(new ApiError("Operação temporariamente indisponível. Tente novamente.",
-                        HttpStatus.SERVICE_UNAVAILABLE.toString(), "DATABASE_BUSY"));
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    ResponseEntity<ApiError> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
-        log.error("database_integrity_failure exceptionType={}", ex.getMostSpecificCause().getClass().getSimpleName());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiError("Não foi possível persistir os dados", HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                        "DATA_INTEGRITY_ERROR"));
-    }
-
     @ExceptionHandler(DeviceConflictException.class)
     ResponseEntity<ApiError> handleDeviceConflictException(DeviceConflictException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

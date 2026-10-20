@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import com.argos.backend_services.config.OpenApiConfig;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,11 +21,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public interface AuthControllerApi {
 
     @PostMapping("/signin")
-    @Operation(summary = "Autentica o usuário", description = "Valida o token do Firebase e retorna o token JWT usado nas rotas protegidas.")
+    @Operation(summary = "Autentica o usuário", description = "No cadeado desta rota, informe o ID token do Firebase em firebaseAuth, sem o prefixo Bearer. Retorna o JWT da aplicação para usar em bearerAuth nas rotas protegidas.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuário autenticado"),
             @ApiResponse(responseCode = "401", description = "Token Firebase ausente, inválido ou expirado")
     })
+    @SecurityRequirement(name = OpenApiConfig.FIREBASE_AUTH)
     ResponseEntity<UserSignInResponseOut> signIn(@Parameter(hidden = true) @FirebaseToken String idToken);
 
     @PutMapping("/first-access")

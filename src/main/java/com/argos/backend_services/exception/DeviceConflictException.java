@@ -1,11 +1,9 @@
 package com.argos.backend_services.exception;
 
-public class DeviceConflictException extends RuntimeException {
-    public DeviceConflictException() {
-        this(null);
-    }
+import org.springframework.http.HttpStatus;
 
-    public DeviceConflictException(Throwable cause) {
-        super("O token já está associado a outro dispositivo. Desative o vínculo anterior antes de sincronizar.", cause);
+public class DeviceConflictException extends ArgosBadRequestException {
+    public DeviceConflictException(String message) {
+        super(HttpStatus.CONFLICT, "DEVICE_CONFLICT", message);
     }
 }

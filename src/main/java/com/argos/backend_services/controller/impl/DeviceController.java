@@ -4,6 +4,7 @@ import com.argos.backend_services.controller.DeviceControllerApi;
 import com.argos.backend_services.controller.annotation.CurrentUser;
 import com.argos.backend_services.dto.in.DeviceSyncIn;
 import com.argos.backend_services.dto.out.DeviceSyncOut;
+import com.argos.backend_services.exception.DeviceConflictException;
 import com.argos.backend_services.security.CurrentUserData;
 import com.argos.backend_services.service.DeviceService;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class DeviceController implements DeviceControllerApi {
     private final DeviceService deviceService;
 
     @Override
-    public ResponseEntity<DeviceSyncOut> sync(DeviceSyncIn input, @CurrentUser CurrentUserData user) {
+    public ResponseEntity<DeviceSyncOut> sync(DeviceSyncIn input, @CurrentUser CurrentUserData user) throws DeviceConflictException {
         return ResponseEntity.ok(deviceService.sync(input, user.id()));
     }
 

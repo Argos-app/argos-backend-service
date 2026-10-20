@@ -3,6 +3,7 @@ package com.argos.backend_services.controller;
 import com.argos.backend_services.controller.annotation.CurrentUser;
 import com.argos.backend_services.dto.in.DeviceSyncIn;
 import com.argos.backend_services.dto.out.DeviceSyncOut;
+import com.argos.backend_services.exception.DeviceConflictException;
 import com.argos.backend_services.security.CurrentUserData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,7 +31,7 @@ public interface DeviceControllerApi {
             @ApiResponse(responseCode = "503", description = "Timeout de transação ou contenção no banco; tentar novamente")
     })
     ResponseEntity<DeviceSyncOut> sync(@Valid @RequestBody DeviceSyncIn input,
-            @Parameter(hidden = true) @CurrentUser CurrentUserData user);
+            @Parameter(hidden = true) @CurrentUser CurrentUserData user) throws DeviceConflictException;
 
     @DeleteMapping("/{deviceId}")
     @Operation(summary = "Desativa o dispositivo e libera o token",

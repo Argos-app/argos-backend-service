@@ -24,13 +24,13 @@ public class DeviceService {
     private final Clock clock;
 
     @Transactional(timeout = 30)
-    public DeviceSyncOut sync(DeviceSyncIn input, UUID userId) {
+    public DeviceSyncOut sync(DeviceSyncIn input, UUID userId) throws DeviceConflictException {
         var device = input.deviceId() == null
                 ? findOrCreate(input.pushToken(), userId)
                 : find(input.deviceId(), userId);
         if (input.deviceId() != null && !Objects.equals(device.getPushToken(), input.pushToken())
                 && deviceRepository.existsByPushTokenAndIdNot(input.pushToken(), device.getId())) {
-            throw new DeviceConflictException();
+            throw new DeviceConflictException("Push token já está associado a outro dispositivo");
         }
 
         var now = LocalDateTime.now(clock);
@@ -58,7 +58,7 @@ public class DeviceService {
         device.setUpdatedAt(LocalDateTime.now(clock));
     }
 
-    private Device findOrCreate(String pushToken, UUID userId) {
+    private Device findOrCreate(String pushToken, UUID userId) throws DeviceConflictException {
         var user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
         var device = deviceRepository.findByPushToken(pushToken).orElseGet(() -> {
@@ -67,7 +67,7 @@ public class DeviceService {
             return created;
         });
         if (!device.getUser().getId().equals(userId)) {
-            throw new DeviceConflictException();
+            throw new DeviceConflictException("Push token já está associado a outro usuário");
         }
         return device;
     }

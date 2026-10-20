@@ -18,12 +18,6 @@ import org.springframework.web.server.ResponseStatusException;
 @RestControllerAdvice
 @Slf4j
 public class CustomGlobalException {
-    @ExceptionHandler(DeviceConflictException.class)
-    ResponseEntity<ApiError> handleDeviceConflictException(DeviceConflictException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ApiError(ex.getMessage(), HttpStatus.CONFLICT.toString(), "DEVICE_CONFLICT"));
-    }
-
     @ExceptionHandler(ResponseStatusException.class)
     ResponseEntity<ApiError> handleResponseStatusException(ResponseStatusException ex) {
         return ResponseEntity.status(ex.getStatusCode()).body(new ApiError(

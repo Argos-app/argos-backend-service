@@ -3,7 +3,7 @@
 
 param (
     [Parameter(Position = 0)]
-    [ValidateSet("up", "down", "restart", "logs", "ps", "clean", "help", "run", "test", "format", "lint")]
+    [ValidateSet("up", "down", "restart", "logs", "ps", "clean", "help", "run", "seed", "test", "format", "lint", "deploy", "deploy-homolog")]
     [string]$Command = "help"
 )
 
@@ -19,9 +19,12 @@ function Show-Help {
     Write-Host "  ps       Show status of all containers"
     Write-Host "  clean    Stop and remove containers, volumes and networks"
     Write-Host "  run      Run the spring boot application"
+    Write-Host "  seed     Load local test data (requires migrated database)"
     Write-Host "  test     Run all tests"
     Write-Host "  format   Format code"
     Write-Host "  lint     Scan code to find bad praticies"
+    Write-Host "  deploy   Deploy to Discloud (production)"
+    Write-Host "  deploy-homolog   Deploy to Discloud (homologation/staging)"
     Write-Host ""
 }
 
@@ -67,7 +70,14 @@ switch ($Command) {
     "run" {
         Check-Java-Version
         Write-Host "Run application..." -ForegroundColor Green  
-	    ./mvnw spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.useTestClasspath=false
+	    ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.useTestClasspath=false
+    }
+    "seed" {
+        Write-Host "Loading local test data in Docker..." -ForegroundColor Green
+        docker compose --profile dataload run --build --rm dataload
+        if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+        }
     }
     "test" {
         Check-Java-Version
@@ -83,6 +93,16 @@ switch ($Command) {
         Check-Java-Version
         Write-Host "Scan code to find bad praticies.." -ForegroundColor Green
         ./mvnw pmd:check
+    }
+    "deploy" {
+        Check-Java-Version
+        Write-Host "Deploy to Discloud (production)..." -ForegroundColor Green
+        & (Join-Path $PSScriptRoot "discloud-deploy.ps1") prod
+    }
+    "deploy-homolog" {
+        Check-Java-Version
+        Write-Host "Deploy to Discloud (homologation/staging)..." -ForegroundColor Green
+        & (Join-Path $PSScriptRoot "discloud-deploy.ps1") homolog
     }
     default {
         Show-Help

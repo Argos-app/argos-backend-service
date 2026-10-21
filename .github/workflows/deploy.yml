@@ -34,9 +34,7 @@ jobs:
             ${{ runner.os }}-maven
 
       - name: Build and run tests
-        run: >
-          ./mvnw -B clean package -Dspring.profiles.active=test
-          -Dspring-boot.excludeGroupIds=io.grpc,com.google.cloud,org.conscrypt
+        run: ./mvnw -B clean package -Dspring.profiles.active=test
 
       - name: Stage app.jar
         run: cp target/app.jar app.jar
@@ -44,10 +42,10 @@ jobs:
       - name: Validate deploy artifact size
         run: |
           ls -lh app.jar
-          max_size=$((100 * 1024 * 1024))
+          max_size=100000000
           app_size=$(stat -c%s app.jar)
           if [ "$app_size" -gt "$max_size" ]; then
-            echo "app.jar exceeds Discloud ZIP limit (100 MB): ${app_size} bytes"
+            echo "app.jar exceeds the 100 MB limit: ${app_size} bytes"
             exit 1
           fi
           

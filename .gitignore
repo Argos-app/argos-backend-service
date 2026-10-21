@@ -10,6 +10,7 @@ node_modules/
 dist/
 build/
 out/
+!**/dto/out/
 .cache/
 .parcel-cache/
 .next/
@@ -70,12 +71,12 @@ build/
 *.iws
 *.ipr
 out/
+!**/dto/out/
 .idea_modules/
 
 # ─────────────────────────────────────────────
 # Docker
 # ─────────────────────────────────────────────
-.dockerignore
 docker-compose.override.yml
 .docker/
 
@@ -100,3 +101,4 @@ Thumbs.db
 .sts4-cache
 
 application-local.properties
+**/firebase-service-account.json

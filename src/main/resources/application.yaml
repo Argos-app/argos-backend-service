@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: backend-services
+server: 
+  servlet:
+    context-path: /api/v1
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+
+argos:
+  routines:
+    time-zone: America/Sao_Paulo
+    medicine-expiration:
+      cron: "0 0 8 * * *"

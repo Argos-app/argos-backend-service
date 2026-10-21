@@ -19,7 +19,36 @@ Backend da plataforma Argos.
 
 Consulte o [CONTRIBUTING.md](./CONTRIBUTING.md) para instruções completas de configuração do ambiente local, padrão de commits e fluxo de trabalho.
 
+### Carga local de dados de teste
+
+Com o arquivo `.env` local preenchido com `POSTGRES_DB`, `DATASOURCE_USER` e `DATASOURCE_PASSWORD`, inicie o PostgreSQL e a aplicação ao menos uma vez para o Flyway aplicar as migrations. Depois carregue os dados de teste usando `make seed` ou, no Windows, `.\scripts\dev.ps1 seed`:
+
+```bash
+make seed
+```
+
+O Compose instala o Python e o driver dentro de um container temporário; não é necessário instalar essas dependências na máquina. A carga cria registros fictícios com e-mails `@argos.test`, deve ser executada uma vez por banco e falha com uma mensagem clara se os dados já estiverem presentes.
+
 ---
+
+## Deploy no Render
+
+Use o `Dockerfile` da raiz. O container lê `PORT` e inicia com o perfil `prod` por padrão.
+Se `SPRING_PROFILES_ACTIVE` já estiver definido no serviço, ajuste seu valor para `prod`.
+
+Configure `DATASOURCE_URL`, `DATASOURCE_USER`, `DATASOURCE_PASSWORD`, `JWT_SECRET` e
+`FIREBASE_SERVICE_ACCOUNT_JSON` no ambiente do serviço. Na interface de variáveis,
+o valor do JSON deve começar com `{` e terminar com `}`, sem aspas simples externas.
+O arquivo de credenciais Firebase local não é enviado ao contexto Docker.
+
+O login é `POST /api/v1/auth/signin`, com `Authorization: Bearer <Firebase ID token>`.
+O usuário precisa existir no Firebase e na tabela `app_user` do banco usado pelo serviço.
+Um usuário ausente nesse banco recebe `404`; o login não exclui sua conta Firebase.
+O JWT devolvido por essa chamada é usado nas demais rotas protegidas.
+
+Os logs mostram `firebase_initialized` com o projeto e a origem das credenciais,
+`signin_request` e `signin_response` com método e status, e `firebase_token_rejected`
+com o código do Firebase. Nenhum desses logs contém tokens, e-mails ou chaves privadas.
 
 ## Deploy no Discloud
 
@@ -48,7 +77,14 @@ make deploy            # production (argos-backend.discloud.app)
 make deploy-homolog    # homologation (argos-backend-hmg.discloud.app)
 ```
 
-Os alvos de deploy executam `scripts/discloud-deploy.sh`, que builda o projeto (`./mvnw clean package`), gera o `app.jar` na raiz e publica na Discloud:
+No Windows (PowerShell):
+
+```powershell
+.\scripts\dev.ps1 deploy            # production (argos-backend.discloud.app)
+.\scripts\dev.ps1 deploy-homolog    # homologation (argos-backend-hmg.discloud.app)
+```
+
+Os alvos de deploy executam `scripts/discloud-deploy.sh` (Linux/macOS) ou `scripts/discloud-deploy.ps1` (Windows), que buildam o projeto (`./mvnw clean package`), geram o `app.jar` na raiz e publicam na Discloud:
 
 - `discloud app commit <id>` quando a aplicação já existe;
 - `discloud app up` como fallback na primeira subida (cria a aplicação).
@@ -56,10 +92,10 @@ Os alvos de deploy executam `scripts/discloud-deploy.sh`, que builda o projeto (
 ### Configuração
 O arquivo [`discloud.config`](./discloud.config) define a aplicação na Discloud (produção) e [`discloud.config.homolog`](./discloud.config.homolog) define a de homologação. Cada ambiente possui seu próprio subdomínio e suas próprias variáveis de ambiente:
 
-| Ambiente | Subdomínio | Config | Comando |
-| --- | --- | --- | --- |
-| Produção | `argos-backend.discloud.app` | `discloud.config` | `make deploy` |
-| Homologação | `argos-backend-hmg.discloud.app` | `discloud.config.homolog` | `make deploy-homolog` |
+| Ambiente | Subdomínio | Config | Comando (Linux/macOS) | Comando (Windows) |
+| --- | --- | --- | --- | --- |
+| Produção | `argos-backend.discloud.app` | `discloud.config` | `make deploy` | `.\scripts\dev.ps1 deploy` |
+| Homologação | `argos-backend-hmg.discloud.app` | `discloud.config.homolog` | `make deploy-homolog` | `.\scripts\dev.ps1 deploy-homolog` |
 
 Ambos os ambientes usam o perfil Spring `prod`, portanto os dois leem as mesmas variáveis (`DATASOURCE_URL`, `DATASOURCE_USER`, `DATASOURCE_PASSWORD`, `MONGODB_URI`) — **defina valores diferentes para cada aplicação** no painel da Discloud (Dashboard → aplicação → Environment), apontando para bancos separados.
 

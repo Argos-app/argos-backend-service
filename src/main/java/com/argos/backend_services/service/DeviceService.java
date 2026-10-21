@@ -59,7 +59,7 @@ public class DeviceService {
     }
 
     private Device findOrCreate(String pushToken, UUID userId) throws DeviceConflictException {
-        var user = userRepository.findByIdForUpdate(userId)
+        var user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
         var device = deviceRepository.findByPushToken(pushToken).orElseGet(() -> {
             var created = new Device();

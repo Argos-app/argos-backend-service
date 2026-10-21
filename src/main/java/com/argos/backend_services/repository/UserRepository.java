@@ -16,10 +16,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<AppUser, UUID> {
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select u from AppUser u where u.id = :userId")
-    Optional<AppUser> findByIdForUpdate(@Param("userId") UUID userId);
-
     Optional<AppUser> findByEmail(String email);
 
     @Query("""

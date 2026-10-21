@@ -11,6 +11,7 @@ import java.util.Optional;
 
 public interface HerdRepository extends JpaRepository<Herd, UUID> {
     List<Herd> findByPropertyId(Property propertyId);
+    List<Herd> findByPropertyIdAndActiveTrue(Property propertyId);
     Optional<Herd> findByHerdNameAndActiveTrue(String herdName);
 
     @EntityGraph(attributePaths = "propertyId")

@@ -1,7 +1,6 @@
 package com.argos.backend_services.service;
 
 import com.argos.backend_services.dto.HerdOut;
-import com.argos.backend_services.entity.Herd;
 import com.argos.backend_services.repository.HerdRepository;
 import com.argos.backend_services.repository.PropertyRepository;
 import lombok.RequiredArgsConstructor;

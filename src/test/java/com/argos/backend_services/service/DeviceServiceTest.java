@@ -18,9 +18,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.hibernate.exception.ConstraintViolationException;
 
 import java.sql.SQLException;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,13 +30,12 @@ import static org.mockito.Mockito.*;
 class DeviceServiceTest {
     @Mock private DeviceRepository devices;
     @Mock private UserRepository users;
-    private final Clock clock = Clock.fixed(Instant.parse("2026-10-20T15:00:00Z"), ZoneId.of("America/Sao_Paulo"));
     private DeviceService service;
     private AppUser user;
 
     @BeforeEach
     void setUp() {
-        service = new DeviceService(devices, users, clock);
+        service = new DeviceService(devices, users);
         user = AppUser.builder().id(UUID.randomUUID()).build();
     }
 
@@ -62,9 +58,6 @@ class DeviceServiceTest {
         assertThat(captor.getValue().getPushToken()).isEqualTo("new-token");
         assertThat(captor.getValue().getPlatform()).isEqualTo(DevicePlatform.ANDROID);
         assertThat(captor.getValue().getModel()).isEqualTo("Pixel");
-        assertThat(captor.getValue().getLastSync()).isEqualTo(LocalDateTime.now(clock));
-        assertThat(captor.getValue().getCreatedAt()).isEqualTo(LocalDateTime.now(clock));
-        assertThat(captor.getValue().getUpdatedAt()).isEqualTo(LocalDateTime.now(clock));
         assertThat(captor.getValue().isActive()).isTrue();
         verify(devices, times(1)).findByPushToken("new-token");
     }
@@ -95,7 +88,6 @@ class DeviceServiceTest {
         assertThat(device.getPushToken()).isEqualTo("rotated");
         assertThat(device.isActive()).isTrue();
         assertThat(device.getCreatedAt()).isEqualTo(created);
-        assertThat(device.getUpdatedAt()).isEqualTo(LocalDateTime.now(clock));
         verifyNoInteractions(users);
     }
 
@@ -172,7 +164,6 @@ class DeviceServiceTest {
 
         assertThat(device.isActive()).isFalse();
         assertThat(device.getPushToken()).isNull();
-        assertThat(device.getUpdatedAt()).isEqualTo(LocalDateTime.now(clock));
         verify(devices, never()).saveAndFlush(any());
         verifyNoInteractions(users);
     }

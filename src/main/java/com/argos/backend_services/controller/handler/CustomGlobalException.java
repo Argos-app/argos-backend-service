@@ -1,12 +1,10 @@
 package com.argos.backend_services.controller.handler;
 
 import com.argos.backend_services.exception.BadRequestException;
-import com.argos.backend_services.exception.DeviceConflictException;
 import com.argos.backend_services.exception.ArgosBadRequestException;
 import com.argos.backend_services.exception.ArgosInternalServerException;
 import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.exception.UnauthorizedException;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -16,7 +14,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
-@Slf4j
 public class CustomGlobalException {
     @ExceptionHandler(ResponseStatusException.class)
     ResponseEntity<ApiError> handleResponseStatusException(ResponseStatusException ex) {

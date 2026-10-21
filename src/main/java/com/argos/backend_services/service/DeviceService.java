@@ -11,8 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Clock;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -21,7 +19,6 @@ import java.util.UUID;
 public class DeviceService {
     private final DeviceRepository deviceRepository;
     private final UserRepository userRepository;
-    private final Clock clock;
 
     @Transactional(timeout = 30)
     public DeviceSyncOut sync(DeviceSyncIn input, UUID userId) throws DeviceConflictException {
@@ -33,18 +30,12 @@ public class DeviceService {
             throw new DeviceConflictException("Push token já está associado a outro dispositivo");
         }
 
-        var now = LocalDateTime.now(clock);
-        if (device.getId() == null) {
-            device.setCreatedAt(now);
-        }
         device.setPushToken(input.pushToken());
         device.setPlatform(input.platform());
         device.setModel(input.model());
-        device.setLastSync(now);
-        device.setUpdatedAt(now);
         device.setActive(true);
 
-        return new DeviceSyncOut(deviceRepository.saveAndFlush(device).getId());
+        return new DeviceSyncOut(deviceRepository.save(device).getId());
     }
 
     @Transactional(timeout = 30)
@@ -55,20 +46,22 @@ public class DeviceService {
         }
         device.setActive(false);
         device.setPushToken(null);
-        device.setUpdatedAt(LocalDateTime.now(clock));
     }
 
     private Device findOrCreate(String pushToken, UUID userId) throws DeviceConflictException {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+
         var device = deviceRepository.findByPushToken(pushToken).orElseGet(() -> {
             var created = new Device();
             created.setUser(user);
+
             return created;
         });
         if (!device.getUser().getId().equals(userId)) {
             throw new DeviceConflictException("Push token já está associado a outro usuário");
         }
+
         return device;
     }
 

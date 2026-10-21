@@ -197,7 +197,7 @@ class DeviceServiceTest {
     }
 
     private void authenticate() {
-        when(users.findByIdForUpdate(user.getId())).thenReturn(Optional.of(user));
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
     }
 
     private DataIntegrityViolationException violation(String state, String constraint) {

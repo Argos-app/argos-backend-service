@@ -4,7 +4,10 @@ import com.argos.backend_services.entity.Herd;
 import com.argos.backend_services.entity.HerdReport;
 import com.argos.backend_services.entity.Lot;
 import com.argos.backend_services.entity.Property;
+import com.argos.backend_services.exception.PropertyNotFoundException;
 import com.argos.backend_services.entity.AnimalException;
+import com.argos.backend_services.entity.AppUser;
+import com.argos.backend_services.entity.Permission;
 import com.argos.backend_services.repository.AnimalExceptionRepository;
 import com.argos.backend_services.repository.ApplicationAnimalRepository;
 import com.argos.backend_services.repository.ApplicationRepository;
@@ -29,7 +32,7 @@ import static org.mockito.Mockito.when;
 class ReportHerdServiceTest {
 
     @Test
-    void shouldCreateReportWithHerdAndLotData() {
+    void shouldCreateReportWithHerdAndLotData() throws PropertyNotFoundException {
         var propertyRepository = mock(PropertyRepository.class);
         var herdRepository = mock(HerdRepository.class);
         var reportRepository = mock(HerdReportRepository.class);
@@ -38,14 +41,11 @@ class ReportHerdServiceTest {
         var animalExceptionRepository = mock(AnimalExceptionRepository.class);
         var applicationAnimalRepository = mock(ApplicationAnimalRepository.class);
         var propertyAccessService = mock(PropertyAccessService.class);
-        var property = Property.builder().id(UUID.randomUUID()).name("Fazenda Boa Vista").build();
-        var herd = Herd.builder().id(UUID.randomUUID()).propertyId(property).herdName("Nelore").breed("Nelore").build();
-        var lot = Lot.builder().id(UUID.randomUUID()).herdId(herd).lotCode("L-01").category("Engorda")
-                .headCount(25).openDate(LocalDate.of(2026, 1, 10)).active(true).build();
-        var openAnimal = AnimalException.builder().id(UUID.randomUUID()).lotId(lot).originLotId(lot)
-                .exceptionDate(LocalDate.of(2026, 2, 1)).status(AnimalException.StatusAnimal.ATIVO).build();
-        var closedAnimal = AnimalException.builder().id(UUID.randomUUID()).lotId(lot).originLotId(lot)
-                .exceptionDate(LocalDate.of(2026, 2, 2)).status(AnimalException.StatusAnimal.RECUPERADO).build();
+        var property = property("Fazenda Boa Vista");
+        var herd = herd(property);
+        var lot = lot(herd);
+        var openAnimal = animal(lot, LocalDate.of(2026, 2, 1), AnimalException.StatusAnimal.ATIVO);
+        var closedAnimal = animal(lot, LocalDate.of(2026, 2, 2), AnimalException.StatusAnimal.RECUPERADO);
         var service = service(propertyRepository, herdRepository, reportRepository, lotRepository,
                 applicationRepository, animalExceptionRepository, applicationAnimalRepository, propertyAccessService);
         var userId = UUID.randomUUID();
@@ -79,7 +79,7 @@ class ReportHerdServiceTest {
     }
 
     @Test
-    void shouldUpdateExistingReportDuringDailySynchronization() {
+    void shouldUpdateExistingReportDuringDailySynchronization() throws PropertyNotFoundException {
         var propertyRepository = mock(PropertyRepository.class);
         var herdRepository = mock(HerdRepository.class);
         var reportRepository = mock(HerdReportRepository.class);
@@ -88,8 +88,8 @@ class ReportHerdServiceTest {
         var animalExceptionRepository = mock(AnimalExceptionRepository.class);
         var applicationAnimalRepository = mock(ApplicationAnimalRepository.class);
         var propertyAccessService = mock(PropertyAccessService.class);
-        var property = Property.builder().id(UUID.randomUUID()).name("Fazenda Boa Vista").build();
-        var herd = Herd.builder().id(UUID.randomUUID()).propertyId(property).herdName("Nelore").breed("Nelore").build();
+        var property = property("Fazenda Boa Vista");
+        var herd = herd(property);
         var createdAt = LocalDateTime.of(2026, 1, 1, 10, 0);
         var existingReport = HerdReport.builder().id("existing-report").reportCreatedAt(createdAt).build();
         var service = service(propertyRepository, herdRepository, reportRepository, lotRepository,
@@ -126,5 +126,36 @@ class ReportHerdServiceTest {
                 animalExceptionRepository,
                 applicationAnimalRepository,
                 propertyAccessService);
+    }
+
+    private Property property(String name) {
+        var now = LocalDateTime.of(2026, 1, 1, 10, 0);
+        var permission = Permission.builder().id(UUID.randomUUID()).code("USER").name("User")
+                .active(true).build();
+        var user = AppUser.builder().id(UUID.randomUUID()).permission(permission).name("Test User")
+                .cpf("12345678901").email("user@test.invalid").firstLogin(false).active(true)
+                .createdAt(now).updatedAt(now).build();
+        return Property.builder().id(UUID.randomUUID()).user(user).name(name).address("Test Street, 1")
+                .city("Test City").state("SP").active(true).createdAt(now).build();
+    }
+
+    private Herd herd(Property property) {
+        var now = LocalDateTime.of(2026, 1, 1, 10, 0);
+        return Herd.builder().id(UUID.randomUUID()).propertyId(property).herdName("Nelore").breed("Nelore")
+                .headCount(25).active(true).createdAt(now).updatedAt(now).build();
+    }
+
+    private Lot lot(Herd herd) {
+        var now = LocalDateTime.of(2026, 1, 10, 10, 0);
+        return Lot.builder().id(UUID.randomUUID()).herdId(herd).lotCode("L-01").category("Engorda")
+                .isExceptionLot(false).headCount(25).fitForSlaughter(true).openDate(now.toLocalDate())
+                .active(true).createdAt(now).updatedAt(now).build();
+    }
+
+    private AnimalException animal(Lot lot, LocalDate exceptionDate, AnimalException.StatusAnimal status) {
+        var now = LocalDateTime.of(2026, 2, 1, 10, 0);
+        return AnimalException.builder().id(UUID.randomUUID()).lotId(lot).originLotId(lot).earTag("BR-001")
+                .category("BOI").exceptionDate(exceptionDate).exceptionReason("Teste").fitForSlaughter(true)
+                .status(status).createdAt(now).updatedAt(now).build();
     }
 }

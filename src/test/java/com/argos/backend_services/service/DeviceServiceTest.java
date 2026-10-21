@@ -43,7 +43,7 @@ class DeviceServiceTest {
     void shouldCreateDeviceAndReturnGeneratedId() throws DeviceConflictException {
         authenticate();
         UUID generatedId = UUID.randomUUID();
-        when(devices.saveAndFlush(any(Device.class))).thenAnswer(invocation -> {
+        when(devices.save(any(Device.class))).thenAnswer(invocation -> {
             Device device = invocation.getArgument(0);
             device.setId(generatedId);
             return device;
@@ -53,7 +53,7 @@ class DeviceServiceTest {
 
         assertThat(result.deviceId()).isEqualTo(generatedId);
         var captor = ArgumentCaptor.forClass(Device.class);
-        verify(devices).saveAndFlush(captor.capture());
+        verify(devices).save(captor.capture());
         assertThat(captor.getValue().getUser()).isSameAs(user);
         assertThat(captor.getValue().getPushToken()).isEqualTo("new-token");
         assertThat(captor.getValue().getPlatform()).isEqualTo(DevicePlatform.ANDROID);
@@ -67,10 +67,10 @@ class DeviceServiceTest {
         authenticate();
         var device = device();
         when(devices.findByPushToken("token")).thenReturn(Optional.of(device));
-        when(devices.saveAndFlush(device)).thenReturn(device);
+        when(devices.save(device)).thenReturn(device);
 
         assertThat(service.sync(input(null, "token"), user.getId()).deviceId()).isEqualTo(device.getId());
-        verify(devices).saveAndFlush(device);
+        verify(devices).save(device);
         verify(devices, times(1)).findByPushToken("token");
     }
 
@@ -82,7 +82,7 @@ class DeviceServiceTest {
         var created = LocalDateTime.of(2026, 1, 1, 12, 0);
         device.setCreatedAt(created);
         when(devices.findByIdAndUser_Id(device.getId(), user.getId())).thenReturn(Optional.of(device));
-        when(devices.saveAndFlush(device)).thenReturn(device);
+        when(devices.save(device)).thenReturn(device);
 
         assertThat(service.sync(input(device.getId(), "rotated"), user.getId()).deviceId()).isEqualTo(device.getId());
         assertThat(device.getPushToken()).isEqualTo("rotated");
@@ -95,7 +95,7 @@ class DeviceServiceTest {
     void shouldAcceptUnchangedTokenWithExplicitId() throws DeviceConflictException {
         var device = device();
         when(devices.findByIdAndUser_Id(device.getId(), user.getId())).thenReturn(Optional.of(device));
-        when(devices.saveAndFlush(device)).thenReturn(device);
+        when(devices.save(device)).thenReturn(device);
 
         assertThat(service.sync(input(device.getId(), "token"), user.getId()).deviceId()).isEqualTo(device.getId());
         verify(devices, never()).existsByPushTokenAndIdNot(anyString(), any());
@@ -111,7 +111,7 @@ class DeviceServiceTest {
 
         assertThatThrownBy(() -> service.sync(input(null, "token"), user.getId()))
                 .isInstanceOf(DeviceConflictException.class);
-        verify(devices, never()).saveAndFlush(any());
+        verify(devices, never()).save(any());
     }
 
     @Test
@@ -122,14 +122,14 @@ class DeviceServiceTest {
 
         assertThatThrownBy(() -> service.sync(input(first.getId(), "other-token"), user.getId()))
                 .isInstanceOf(DeviceConflictException.class);
-        verify(devices, never()).saveAndFlush(any());
+        verify(devices, never()).save(any());
     }
 
     @Test
     void shouldNotCreateWhenExplicitIdIsMissingOrForeign() {
         assertThatThrownBy(() -> service.sync(input(UUID.randomUUID(), "token"), user.getId()))
                 .isInstanceOf(NotFoundException.class);
-        verify(devices, never()).saveAndFlush(any());
+        verify(devices, never()).save(any());
         verify(devices, never()).findByPushToken(anyString());
     }
 
@@ -164,7 +164,7 @@ class DeviceServiceTest {
 
         assertThat(device.isActive()).isFalse();
         assertThat(device.getPushToken()).isNull();
-        verify(devices, never()).saveAndFlush(any());
+        verify(devices, never()).save(any());
         verifyNoInteractions(users);
     }
 
@@ -172,7 +172,7 @@ class DeviceServiceTest {
     void shouldRejectDeactivationOfMissingOrForeignDevice() {
         assertThatThrownBy(() -> service.deactivate(UUID.randomUUID(), user.getId()))
                 .isInstanceOf(NotFoundException.class);
-        verify(devices, never()).saveAndFlush(any());
+        verify(devices, never()).save(any());
     }
 
     @Test
@@ -198,7 +198,7 @@ class DeviceServiceTest {
 
     private void assertIntegrityFailureIsPreserved(DataIntegrityViolationException exception) {
         authenticate();
-        when(devices.saveAndFlush(any())).thenThrow(exception);
+        when(devices.save(any())).thenThrow(exception);
         assertThatThrownBy(() -> service.sync(input(null, "token"), user.getId())).isSameAs(exception);
     }
 

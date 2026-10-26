@@ -12,7 +12,6 @@ import java.util.UUID;
 @Schema(description = "Dados para aplicação individual de medicamento em um animal de exceção")
 public record AnimalApplicationIn(
         @NotBlank
-        @JsonProperty("ear_Code")
         @Schema(name = "ear_Code", description = "Número do brinco do animal", example = "BR-0001")
         String earCode,
 

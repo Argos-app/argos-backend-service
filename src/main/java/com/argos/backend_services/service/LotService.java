@@ -4,6 +4,7 @@ import com.argos.backend_services.dto.in.LotIn;
 import com.argos.backend_services.dto.out.LotOut;
 import com.argos.backend_services.entity.Lot;
 import com.argos.backend_services.exception.LotNotFoundException;
+import com.argos.backend_services.exception.PropertyNotFoundException;
 import com.argos.backend_services.mapper.LotMapper;
 import com.argos.backend_services.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class LotService {
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final LotMapper mapper;
     private final PropertyAccessService propertyAccessService;
+    private final ReportHerdService reportHerdService;
 
     @Transactional(readOnly = true)
     public List<LotOut> listLot(UUID userId) {
@@ -35,13 +37,14 @@ public class LotService {
                 .toList();
     }
 
-    public void registerLot(LotIn input, UUID userId) throws LotNotFoundException {
+    public void registerLot(LotIn input, UUID userId) throws LotNotFoundException, PropertyNotFoundException {
         var herd = herdRepository.findWithPropertyByHerdNameAndActiveTrue(input.herdName())
                 .orElseThrow(() -> new LotNotFoundException("Herd not found: " + input.herdName()));
 
         propertyAccessService.requireActiveAccess(userId, herd.getPropertyId().getId());
         var lot = mapper.toEntity(input, herd);
         lotRepository.save(lot);
+        reportHerdService.saveHerd(userId, herd.getPropertyId().getId());
     }
 
     public void deleteLot(UUID lotId, UUID userId) throws LotNotFoundException {

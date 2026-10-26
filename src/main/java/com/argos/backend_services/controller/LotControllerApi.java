@@ -4,6 +4,7 @@ import com.argos.backend_services.controller.annotation.CurrentUser;
 import com.argos.backend_services.dto.in.LotIn;
 import com.argos.backend_services.dto.out.LotOut;
 import com.argos.backend_services.exception.LotNotFoundException;
+import com.argos.backend_services.exception.PropertyNotFoundException;
 import com.argos.backend_services.security.CurrentUserData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -40,7 +41,7 @@ public interface LotControllerApi {
             @ApiResponse(responseCode = "422", description = "Rebanho não encontrado ou regra de negócio inválida", content = @Content(examples = @ExampleObject(value = "{\"message\":\"Herd not found\"}")))
     })
     ResponseEntity<Void> registerLot(@Valid @RequestBody LotIn lotIn,
-                                     @CurrentUser CurrentUserData currentUser) throws LotNotFoundException;
+                                     @CurrentUser CurrentUserData currentUser) throws LotNotFoundException, PropertyNotFoundException;
 
     @DeleteMapping("/{lotId}")
     @Operation(summary = "Exclui lote", description = "Executa exclusão lógica.")

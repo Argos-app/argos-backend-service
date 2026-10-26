@@ -13,6 +13,8 @@ import com.argos.backend_services.repository.LotRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 
 @Component
 @RequiredArgsConstructor
@@ -34,7 +36,6 @@ public class LotMapper {
 
     public Lot toEntity(LotIn input, Herd herd) {
         return Lot.builder()
-                .id(null)
                 .herdId(herd)
                 .parentId(null)
                 .lotCode(input.lotName())

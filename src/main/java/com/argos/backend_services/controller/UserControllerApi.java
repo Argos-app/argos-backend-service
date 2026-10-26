@@ -156,7 +156,7 @@ public interface UserControllerApi {
     ResponseEntity<Void> deleteUser(@Parameter(description = "Identificador do usuário") @PathVariable String userId,
             @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser);
 
-    @PatchMapping("/update-perfil")
+    @PatchMapping("/update-profile")
     @Operation(summary = "Atualiza o perfil do usuário autenticado",
             description = "Atualiza nome, e-mail e/ou URL da foto. Os campos não enviados são preservados.")
     @ApiResponses({

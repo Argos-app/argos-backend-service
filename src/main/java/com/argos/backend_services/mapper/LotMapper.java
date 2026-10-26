@@ -36,7 +36,6 @@ public class LotMapper {
 
     public Lot toEntity(LotIn input, Herd herd) {
         return Lot.builder()
-                .id(UUID.randomUUID())
                 .herdId(herd)
                 .parentId(null)
                 .lotCode(input.lotName())

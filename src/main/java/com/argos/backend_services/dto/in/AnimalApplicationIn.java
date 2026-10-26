@@ -1,10 +1,9 @@
 package com.argos.backend_services.dto.in;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -12,7 +11,7 @@ import java.util.UUID;
 @Schema(description = "Dados para aplicação individual de medicamento em um animal de exceção")
 public record AnimalApplicationIn(
         @NotBlank
-        @Schema(name = "ear_Code", description = "Número do brinco do animal", example = "BR-0001")
+        @Schema(description = "Número do brinco do animal", example = "BR-0001")
         String earCode,
 
         @NotNull

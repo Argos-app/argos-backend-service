@@ -209,7 +209,7 @@ class AnimalExceptionApplicationFlowTest {
                         .with(authentication(authentication))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"ear_Code":"%s","medicineBatchId":"%s","dose":5,"unit":"ml","route":"ORAL","goal":"Tratamento"}
+                                {"earCode":"%s","medicineBatchId":"%s","dose":5,"unit":"ml","route":"ORAL","goal":"Tratamento"}
                                 """.formatted(EAR_CODE, BATCH_ID)))
                 .andExpect(status().isCreated());
 
@@ -221,7 +221,7 @@ class AnimalExceptionApplicationFlowTest {
                         .with(authentication(authentication))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"ear_Code":"BR-9999","medicineBatchId":"%s","dose":5,"unit":"ml","route":"ORAL"}
+                                {"earCode":"BR-9999","medicineBatchId":"%s","dose":5,"unit":"ml","route":"ORAL"}
                                 """.formatted(BATCH_ID)))
                 .andExpect(status().isBadRequest());
         verify(databaseRoutineRepository, times(1)).registerAnimalApplication(

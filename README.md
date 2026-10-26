@@ -50,6 +50,27 @@ Os logs mostram `firebase_initialized` com o projeto e a origem das credenciais,
 `signin_request` e `signin_response` com método e status, e `firebase_token_rejected`
 com o código do Firebase. Nenhum desses logs contém tokens, e-mails ou chaves privadas.
 
+## Notificações de fim de carência
+
+O aplicativo deve enviar seu token FCM em `POST /api/v1/devices/sync` após o login
+e quando o token for renovado. No logout, deve chamar `DELETE /api/v1/devices/{deviceId}`.
+O backend usa as mesmas credenciais Firebase Admin da autenticação para enviar push.
+
+A rotina `argos.routines.withdrawal.cron` (padrão: 8h, no fuso
+`argos.routines.time-zone`) encontra aplicações cuja carência termina no dia e
+cujo lote está liberado. Ela cria um aviso em `alert` para o usuário da aplicação
+e uma entrega `PUSH` em `notification_delivery` para cada dispositivo ativo. O
+payload FCM contém `type=CARENCIA`, `alertId` e `lotId`; o texto é enviado como
+notificação visível. O alerta de início da carência criado pelo trigger do banco
+é um evento separado.
+
+Entregas pendentes ou com falha são reprocessadas a cada 15 minutos por
+`argos.routines.withdrawal.retry-cron` (até três tentativas). Tokens confirmados
+como não registrados pelo FCM são desativados. Os IDs estáveis de aviso e entrega
+impedem registros duplicados quando a rotina executa novamente. Como o FCM e o
+banco não compartilham uma transação, uma interrupção após o envio e antes da
+confirmação no banco pode resultar em novo push na tentativa seguinte.
+
 ## Deploy no Discloud
 
 Este projeto está configurado para deploy na [Discloud](https://discloud.com) como uma aplicação `site` (API).

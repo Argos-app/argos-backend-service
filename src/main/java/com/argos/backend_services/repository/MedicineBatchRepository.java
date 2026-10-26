@@ -21,10 +21,10 @@ public interface MedicineBatchRepository extends JpaRepository<MedicineBatch, UU
 
     boolean existsByMedicineIdAndBatchNumber(Medicine medicine, String batchNumber);
 
-    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "supplierId"})
+    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "medicineId.supplierId"})
     Page<MedicineBatch> findByStatus(MedicineBatch.Status status, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "supplierId"})
+    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "medicineId.supplierId"})
     Page<MedicineBatch> findByStatusAndMedicineId_TherapeuticCategoryId(
             MedicineBatch.Status status,
             UUID therapeuticCategoryId,

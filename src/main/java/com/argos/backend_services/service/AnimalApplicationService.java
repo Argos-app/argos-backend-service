@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -33,6 +34,10 @@ public class AnimalApplicationService {
 
         if (animalException.getStatus() != AnimalException.StatusAnimal.ATIVO) {
             throw new BadRequestException("Aplicações individuais só podem ser registradas para exceções ativas");
+        }
+
+        if (!Objects.equals(animalException.getEarTag(), input.earCode())) {
+            throw new BadRequestException("O ear_Code informado não corresponde ao animal da URL");
         }
 
         var medicineBatch = medicineBatchRepository.findById(input.medicineBatchId())

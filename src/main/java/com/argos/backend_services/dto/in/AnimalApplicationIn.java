@@ -3,6 +3,7 @@ package com.argos.backend_services.dto.in;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -10,10 +11,29 @@ import java.util.UUID;
 
 @Schema(description = "Dados para aplicação individual de medicamento em um animal de exceção")
 public record AnimalApplicationIn(
-        @NotNull @Schema(description = "Identificador do lote do medicamento", example = "3d2135ac-f45b-4b46-aa7c-61ac0e6c3c7e") UUID medicineBatchId,
-        @NotNull @Positive @Schema(description = "Dose aplicada", example = "5.00") BigDecimal dose,
-        @NotBlank @Schema(description = "Unidade da dose", example = "ml") String unit,
-        @NotBlank @Schema(description = "Via de aplicação", example = "ORAL") String route,
-        @Schema(description = "Finalidade da aplicação", example = "Tratamento") String goal
+        @NotBlank
+        @JsonProperty("ear_Code")
+        @Schema(name = "ear_Code", description = "Número do brinco do animal", example = "BR-0001")
+        String earCode,
+
+        @NotNull
+        @Schema(description = "Identificador do lote do medicamento", example = "3d2135ac-f45b-4b46-aa7c-61ac0e6c3c7e")
+        UUID medicineBatchId,
+
+        @NotNull
+        @Positive
+        @Schema(description = "Dose aplicada", example = "5.00")
+        BigDecimal dose,
+
+        @NotBlank
+        @Schema(description = "Unidade da dose", example = "ml")
+        String unit,
+
+        @NotBlank
+        @Schema(description = "Via de aplicação", example = "ORAL")
+        String route,
+
+        @Schema(description = "Finalidade da aplicação", example = "Tratamento")
+        String goal
 ) {
 }

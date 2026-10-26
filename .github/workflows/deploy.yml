@@ -50,7 +50,7 @@ jobs:
           fi
           
       - name: Swap config for homolog (develop -> argos-backend-hmg)
-        if: github.ref_name == 'develop'
+        if: github.ref_name == 'develop' || github.ref_name == 'fix/medicine-and-lots'
         run: cp discloud.config.homolog discloud.config
 
       - name: Deploy to Discloud

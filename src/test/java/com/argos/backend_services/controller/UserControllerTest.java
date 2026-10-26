@@ -111,7 +111,10 @@ public class UserControllerTest {
         mockMvc.perform(post("/users")
                         .with(authentication(userAuthentication()))
                         .contentType("application/json")
-                        .content("{}"))
+                        .content("""
+                                {"name":"New User","email":"new@argos.com","cpf":"12345678901",
+                                 "password":"password123","permissionId":"%s","propertyId":"%s"}
+                                """.formatted(UUID.randomUUID(), UUID.randomUUID())))
                 .andExpect(status().isForbidden());
     }
 

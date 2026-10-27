@@ -6,10 +6,12 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 public interface DeviceRepository extends JpaRepository<Device, UUID> {
     Optional<Device> findByIdAndUser_Id(UUID id, UUID userId);
     Optional<Device> findByPushToken(String pushToken);
     boolean existsByPushTokenAndIdNot(String pushToken, UUID id);
+    List<Device> findByUser_IdAndActiveTrueAndPushTokenIsNotNull(UUID userId);
 }

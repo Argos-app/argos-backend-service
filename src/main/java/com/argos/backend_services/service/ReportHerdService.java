@@ -1,10 +1,21 @@
 package com.argos.backend_services.service;
 
+import com.argos.backend_services.dto.out.HerdReportListItemOut;
+import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.entity.*;
+import com.argos.backend_services.exception.ArgosInternalServerException;
 import com.argos.backend_services.exception.PropertyNotFoundException;
 import com.argos.backend_services.repository.*;
+import com.argos.backend_services.utils.PageableUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +28,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReportHerdService {
 
     private final PropertyRepository propertyRepository;
@@ -27,6 +39,36 @@ public class ReportHerdService {
     private final AnimalExceptionRepository animalExceptionRepository;
     private final ApplicationAnimalRepository applicationAnimalRepository;
     private final PropertyAccessService propertyAccessService;
+
+    @Transactional(readOnly = true)
+    public PageOut<HerdReportListItemOut> list(UUID propertyId, int page, int size, UUID administratorId) {
+        var pageable = PageableUtils.createPageRequest(page, size,
+                Sort.by(Sort.Order.desc("reportCreatedAt"), Sort.Order.desc("id")));
+        try {
+            var propertyIds = propertyRepository.findByUserIdAndActiveTrue(administratorId).stream()
+                    .map(property -> property.getId().toString()).toList();
+            if (propertyId != null) {
+                if (!propertyIds.contains(propertyId.toString())) {
+                    throw new AccessDeniedException("Usuário não administra a propriedade informada");
+                }
+                propertyIds = List.of(propertyId.toString());
+            }
+            var reports = propertyIds.isEmpty() ? Page.<HerdReport>empty(pageable)
+                    : herdReportRepository.findByRelationalPropertyIdIn(propertyIds, pageable);
+            var result = reports.map(HerdReportListItemOut::from);
+            return new PageOut<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(),
+                    result.getTotalPages(), result.isFirst(), result.isLast());
+        } catch (DataAccessException exception) {
+            var failure = new ArgosInternalServerException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "HERD_REPORT_LIST_FAILED", "Não foi possível listar os relatórios");
+            if (log.isErrorEnabled()) {
+                log.error("herd_report_list_failed userId={} propertyId={} cause={}",
+                        administratorId, propertyId, exception.getClass().getSimpleName());
+            }
+            failure.initCause(exception);
+            throw failure;
+        }
+    }
 
     @Transactional(readOnly = true)
     public HerdReport readHerd(UUID userId, UUID propertyId) throws PropertyNotFoundException {

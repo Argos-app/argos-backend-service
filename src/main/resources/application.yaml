@@ -1,6 +1,9 @@
 spring:
   application:
     name: backend-services
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/test}
 server: 
   servlet:
     context-path: /api/v1

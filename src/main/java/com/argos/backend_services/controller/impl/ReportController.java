@@ -2,6 +2,8 @@ package com.argos.backend_services.controller.impl;
 
 import com.argos.backend_services.controller.ReportControllerApi;
 import com.argos.backend_services.controller.annotation.CurrentUser;
+import com.argos.backend_services.dto.out.HerdReportListItemOut;
+import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.exception.PropertyNotFoundException;
 import com.argos.backend_services.security.CurrentUserData;
 import com.argos.backend_services.service.ReportHerdService;
@@ -19,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,6 +31,16 @@ public class ReportController implements ReportControllerApi {
     private final ReportMedicineService reportMedicineService;
     private final ReportHerdService reportHerdService;
     private final HerdReportExportService herdReportExportService;
+
+    @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<PageOut<HerdReportListItemOut>> list(
+            @RequestParam(required = false) UUID propertyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            @CurrentUser CurrentUserData currentUser) {
+        return ResponseEntity.ok(reportHerdService.list(propertyId, page, size, currentUser.id()));
+    }
 
     @Override
     @PreAuthorize("hasAuthority('ADMIN')")

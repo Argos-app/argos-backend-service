@@ -15,6 +15,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.mockito.MockedStatic;
@@ -114,7 +115,7 @@ class AuthServiceTest {
         when(firebaseAuth.verifyIdToken(firebaseIdToken)).thenReturn(decodedToken);
         when(decodedToken.getEmail()).thenReturn(email);
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
-        when(propertyRepository.findByUserIdAndActiveTrue(userId)).thenReturn(List.of(property));
+        when(propertyRepository.findActiveLinkedProperties(userId, PageRequest.of(0, 1))).thenReturn(List.of(property));
 
         JwtService jwtService = new JwtService(
                 "test-secret-minimo-32-caracteres-para-hs256",
@@ -132,6 +133,7 @@ class AuthServiceTest {
             UserSignInResponseOut response = authService.signIn(firebaseIdToken);
 
             assertEquals("Argos User", response.userName());
+            assertEquals("USER", response.role());
             assertEquals(email, response.email());
             assertEquals(userId, response.userId());
             assertEquals("https://example.com/user.png", response.photoUrl());
@@ -143,7 +145,7 @@ class AuthServiceTest {
             assertEquals(userId, jwtService.extractUserId(response.bearerToken()));
             verify(userRepository).findByEmail(email);
             verify(userRepository).save(user);
-            verify(propertyRepository).findByUserIdAndActiveTrue(userId);
+            verify(propertyRepository).findActiveLinkedProperties(userId, PageRequest.of(0, 1));
         }
     }
 

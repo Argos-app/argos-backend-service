@@ -31,7 +31,7 @@ public class LotController implements LotControllerApi {
     @Override
     public ResponseEntity<Void> registerLot(@RequestBody @Valid LotIn lotIn,
                                             @CurrentUser CurrentUserData currentUser) throws LotNotFoundException, PropertyNotFoundException {
-        lotService.registerLot(lotIn, currentUser.id());
+        lotService.registerLot(lotIn, currentUser.id(), currentUser.propertyId());
         return ResponseEntity.ok().build();
     }
 

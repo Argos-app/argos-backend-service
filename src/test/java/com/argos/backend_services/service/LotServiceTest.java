@@ -1,9 +1,11 @@
 package com.argos.backend_services.service;
 
 import com.argos.backend_services.entity.Lot;
+import com.argos.backend_services.entity.enums.HerdCategory;
 import com.argos.backend_services.dto.in.LotIn;
 import com.argos.backend_services.dto.out.LotOut;
 import com.argos.backend_services.exception.LotNotFoundException;
+import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.exception.PropertyNotFoundException;
 import com.argos.backend_services.mapper.LotMapper;
 import com.argos.backend_services.repository.*;
@@ -19,13 +21,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class LotServiceTest {
     private LotService service(LotRepository lots, HerdRepository herds, DatabaseRoutineRepository routines,
                                LotMapper mapper, PropertyAccessService access) {
-        return new LotService(lots, herds, routines, mapper, access, mock(ReportHerdService.class));
+        return new LotService(lots, herds, routines, mapper, access, mock(ReportHerdService.class), mock(PropertyRepository.class));
     }
-    @Test void shouldRegisterLotUsingHerdName() throws LotNotFoundException, PropertyNotFoundException {
+    @Test void shouldRegisterLotUsingHerdId() throws PropertyNotFoundException {
         var lots = mock(LotRepository.class); var routines = mock(DatabaseRoutineRepository.class);
         var mapper = mock(LotMapper.class); var herds = mock(HerdRepository.class); var access = mock(PropertyAccessService.class);
         var service = service(lots, herds, routines, mapper, access);
-        var input = LotIn.builder().lotName("L-1").herdName("H-1").category("Engorda").headCount(2)
+        var herdId = UUID.randomUUID();
+        var input = LotIn.builder().lotName("L-1").herdId(herdId).category(HerdCategory.FATTENING).headCount(2)
                 .releaseSlaughterDate(LocalDate.of(2026, 7, 1)).build();
         var propertyId = UUID.randomUUID(); var property = mock(Property.class); when(property.getId()).thenReturn(propertyId);
         var now = LocalDateTime.of(2026, 1, 1, 10, 0);
@@ -34,20 +37,23 @@ class LotServiceTest {
         var lot = Lot.builder().herdId(herd).lotCode("L-1").category("Engorda").isExceptionLot(false)
                 .headCount(2).fitForSlaughter(true).openDate(now.toLocalDate()).active(true)
                 .createdAt(now).updatedAt(now).build();
-        when(herds.findWithPropertyByHerdNameAndActiveTrue("H-1")).thenReturn(Optional.of(herd));
+        when(herds.findWithPropertyByIdAndActiveTrue(herdId)).thenReturn(Optional.of(herd));
         when(mapper.toEntity(input, herd)).thenReturn(lot);
-        service.registerLot(input, UUID.randomUUID());
-        verify(lots).save(lot);
+        service.registerLot(input, UUID.randomUUID(), null);
+        verify(lots).saveAndFlush(lot);
+        verify(herds, never()).saveAndFlush(any());
     }
 
     @Test void shouldThrowWhenHerdDoesNotExist() throws Exception {
         var mapper = mock(LotMapper.class); var herds = mock(HerdRepository.class);
-        when(herds.findWithPropertyByHerdNameAndActiveTrue(any())).thenReturn(Optional.empty());
+        when(herds.findWithPropertyByIdAndActiveTrue(any())).thenReturn(Optional.empty());
         var service = service(mock(LotRepository.class), herds, mock(DatabaseRoutineRepository.class), mapper,
                 mock(PropertyAccessService.class));
-        var input = LotIn.builder().lotName("L-1").herdName("missing").category("Engorda")
+        var input = LotIn.builder().lotName("L-1").herdId(UUID.randomUUID()).herdName("New herd").breed("Nelore").category(HerdCategory.FATTENING)
                 .headCount(1).releaseSlaughterDate(LocalDate.now()).build();
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.registerLot(input, UUID.randomUUID())).isInstanceOf(LotNotFoundException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.registerLot(input, UUID.randomUUID(), null))
+                .isInstanceOf(NotFoundException.class).hasMessage("Rebanho não encontrado");
+        verify(herds, never()).saveAndFlush(any());
     }
 
     @Test void shouldSoftDeleteLot() throws LotNotFoundException {

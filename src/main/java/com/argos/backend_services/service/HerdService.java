@@ -21,6 +21,7 @@ public class HerdService {
         var herd = herdRepository.findByPropertyId(property);
         return herd.stream()
                 .map(herds -> HerdOut.builder()
+                        .herdId(herds.getId())
                         .propertyId(herds.getPropertyId().getId())
                         .herdName(herds.getHerdName())
                         .breed(herds.getBreed())

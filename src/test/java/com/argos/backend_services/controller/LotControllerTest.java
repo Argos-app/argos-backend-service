@@ -2,6 +2,7 @@ package com.argos.backend_services.controller;
 
 import com.argos.backend_services.controller.impl.LotController;
 import com.argos.backend_services.dto.in.LotIn;
+import com.argos.backend_services.entity.enums.HerdCategory;
 import com.argos.backend_services.dto.out.LotOut;
 import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.exception.PropertyNotFoundException;
@@ -23,11 +24,11 @@ class LotControllerTest {
     }
     @Test void shouldRegisterLotAndReturnOk() throws LotNotFoundException, PropertyNotFoundException {
         var service = mock(LotService.class); var controller = new LotController(service); var input = LotIn.builder()
-                .lotName("L-1").herdName("H-1").category("Engorda").headCount(1)
+                .lotName("L-1").herdName("H-1").category(HerdCategory.FATTENING).headCount(1)
                 .releaseSlaughterDate(LocalDate.of(2026, 7, 1)).build();
         var user = UUID.randomUUID();
         var response = controller.registerLot(input, currentUser(user));
-        assertThat(response.getStatusCode().value()).isEqualTo(200); verify(service).registerLot(input, user);
+        assertThat(response.getStatusCode().value()).isEqualTo(200); verify(service).registerLot(input, user, null);
     }
     @Test void shouldDeleteLotAndReturnNoContent() throws LotNotFoundException {
         var service = mock(LotService.class); var controller = new LotController(service); var id = UUID.randomUUID(); var user = UUID.randomUUID();

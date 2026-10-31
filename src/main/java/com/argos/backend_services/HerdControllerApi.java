@@ -15,11 +15,11 @@ import java.util.List;
 @Tag(name = "Rebanho", description = "Rotas de gestão de rebanho")
 public interface HerdControllerApi {
     @GetMapping("/list-all")
-    @Operation(summary = "Lista todos os animais do rebanho da propriedade do usuário autenticado",
-            description = "Retorna uma lista de todos os animais do rebanho da propriedade vinculada ao usuário autenticado. " +
+    @Operation(summary = "Lista rebanhos da propriedade do usuário autenticado",
+            description = "Retorna uma lista de rebanhos. " +
                     "O usuário deve ter permissão para acessar a propriedade.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de animais do rebanho retornada com sucesso"),
+            @ApiResponse(responseCode = "200", description = "Lista de rebanhos retornada com sucesso"),
             @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para acessar a propriedade"),
             @ApiResponse(responseCode = "404", description = "Propriedade vinculada ao usuário não encontrada")

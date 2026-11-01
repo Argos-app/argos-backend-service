@@ -55,29 +55,11 @@ npm install
 
 > Este passo é obrigatório. Sem ele, o commitlint não vai funcionar e seus commits serão bloqueados.
 
-### 4. Configure o `application-local.properties`
-
-Crie o arquivo em `src/main/resources/application-local.properties` com os valores do seu `.env`:
-
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/app_db
-spring.datasource.username=app_user
-spring.datasource.password=sua_senha
-
-spring.data.redis.host=localhost
-spring.data.redis.port=6379
-spring.data.redis.password=sua_senha
-
-spring.data.mongodb.uri=mongodb://app_user:sua_senha@localhost:27017/app_db?authSource=admin
-```
-
-> Este arquivo está no `.gitignore` e não deve ser versionado.
-
-### 5. Configure o perfil local no IntelliJ
+### 4. Configure o perfil local no IntelliJ
 
 1. Abra **Run > Edit Configurations**
 2. Selecione `BackendServicesApplication`
-3. No campo **Active profiles**, digite: `local`
+3. No campo **Active profiles**, digite: `dev`
 4. Clique em **OK**
 
 ---

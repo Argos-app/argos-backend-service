@@ -1,6 +1,8 @@
 package com.argos.backend_services.mapper;
 
 import com.argos.backend_services.dto.out.MedicineListItemOut;
+import com.argos.backend_services.dto.out.MedicineCatalogItemOut;
+import com.argos.backend_services.entity.Medicine;
 import com.argos.backend_services.entity.MedicineBatch;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -9,6 +11,11 @@ import java.math.BigDecimal;
 
 @Mapper(componentModel = "spring")
 public interface MedicineMapper {
+
+    @Mapping(target = "medicineId", source = "id")
+    @Mapping(target = "medicineName", source = "brandName")
+    @Mapping(target = "productRegistration", source = "mapaRegistration")
+    MedicineCatalogItemOut toCatalogItemOut(Medicine medicine);
 
     @Mapping(target = "medicineBatchId", source = "batch.id")
     @Mapping(target = "medicineName", source = "batch.medicineId.brandName")

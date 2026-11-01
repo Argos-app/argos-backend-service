@@ -23,6 +23,8 @@ public class LotOut {
     private String lotName;
     @Schema(description = "Id do lote")
     private UUID lotId;
+    @Schema(description = "headCount")
+    private Integer headCount;
     @Schema(description = "Data de criação do lote")
     private LocalDate openDate;
     @Schema(description = "Dia estimado de abate")

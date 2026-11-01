@@ -23,6 +23,7 @@ public class LotMapper {
         return LotOut.builder()
                 .lotId(lot.getId())
                 .lotName(lot.getLotCode())
+                .headCount(lot.getHeadCount())
                 .openDate(lot.getOpenDate())
                 .releaseSlaughterDate(lot.getSlaughterReleaseDate())
                 .category(lot.getCategory())

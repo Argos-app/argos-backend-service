@@ -52,7 +52,7 @@ public class LotService {
                 : findHerd(input.herdId(), userId);
         var lot = mapper.toEntity(input, herd);
         lotRepository.saveAndFlush(lot);
-        reportHerdService.saveSingleHerd(userId, herd.getId());
+        reportHerdService.synchronizeSingleHerd(userId, herd.getId());
     }
 
     private Herd findHerd(UUID herdId, UUID userId) {

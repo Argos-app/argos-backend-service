@@ -55,24 +55,7 @@ npm install
 
 > Este passo é obrigatório. Sem ele, o commitlint não vai funcionar e seus commits serão bloqueados.
 
-### 4. Configure as variáveis de ambiente da aplicação
-
-Disponibilize ao processo Java os valores do `.env.example`, incluindo `DATASOURCE_URL`,
-`DATASOURCE_USER`, `DATASOURCE_PASSWORD`, `MONGODB_URI`, `JWT_SECRET` e as variáveis `REDIS_*`.
-Configure também a origem das credenciais Firebase usada no ambiente local.
-
-No IntelliJ, use o campo **Environment variables** da configuração de execução, ou configure
-explicitamente o carregamento do `.env`. Ao preencher variáveis manualmente, use os valores
-finais das URLs, com host, porta e credenciais resolvidos.
-
-O Spring Boot não lê `.env` automaticamente. O Compose usa esse arquivo para configurar os
-containers, mas isso não disponibiliza suas variáveis ao Java executado fora deles.
-
-O Redis é configurado no `application.yaml`, compartilhado pelos perfis. Local e homologação
-usam `dev`; produção usa `prod`. Cada ambiente deve apontar para seus próprios bancos e para
-o Redis/banco lógico usado pelo produtor das métricas daquele ambiente.
-
-### 5. Configure o perfil local no IntelliJ
+### 4. Configure o perfil local no IntelliJ
 
 1. Abra **Run > Edit Configurations**
 2. Selecione `BackendServicesApplication`

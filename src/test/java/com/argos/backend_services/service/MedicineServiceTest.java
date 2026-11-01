@@ -1,6 +1,8 @@
 package com.argos.backend_services.service;
 
 import com.argos.backend_services.dto.in.MedicineBatchIn;
+import com.argos.backend_services.dto.out.MedicineCatalogItemOut;
+import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.entity.AppUser;
 import com.argos.backend_services.entity.Medicine;
 import com.argos.backend_services.entity.MedicineBatch;
@@ -17,6 +19,9 @@ import com.argos.backend_services.repository.PropertyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -24,6 +29,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,7 +45,6 @@ class MedicineServiceTest {
     private SupplierRepository supplierRepository;
     private StockMovementRepository stockMovementRepository;
     private UserRepository userRepository;
-    private PropertyAccessService propertyAccessService;
     private DatabaseRoutineRepository databaseRoutineRepository;
     private MedicineMapper medicineMapper;
     private MedicineService service;
@@ -52,12 +57,10 @@ class MedicineServiceTest {
         supplierRepository = mock(SupplierRepository.class);
         stockMovementRepository = mock(StockMovementRepository.class);
         userRepository = mock(UserRepository.class);
-        propertyAccessService = mock(PropertyAccessService.class);
         databaseRoutineRepository = mock(DatabaseRoutineRepository.class);
         medicineMapper = mock(MedicineMapper.class);
         service = new MedicineService(medicineRepository, medicineBatchRepository, supplierRepository,
-                stockMovementRepository, userRepository, propertyAccessService,
-                databaseRoutineRepository, medicineMapper, clock);
+                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock);
     }
 
     @Test
@@ -98,7 +101,7 @@ class MedicineServiceTest {
     @Test
     void shouldRejectNonFutureExpiryDateBeforeAccessingRepositories() {
         var input = new MedicineBatchIn("12345", "LOTE-1", LocalDate.of(2026, 1, 10),
-                LocalDate.of(2026, 10, 11), new BigDecimal("5.000"), "Fornecedor", "12345678000199", UUID.randomUUID());
+                LocalDate.of(2026, 10, 11), new BigDecimal("5.000"), "Fornecedor", "12345678000199");
 
         assertThatThrownBy(() -> service.registerBatch(input, UUID.randomUUID()))
                 .isInstanceOf(BadRequestException.class)
@@ -128,9 +131,41 @@ class MedicineServiceTest {
         verify(stockMovementRepository).save(any());
     }
 
+    @Test
+    void shouldListActiveCatalogItemsInStableOrderAndPreservePageMetadata() {
+        var medicineId = UUID.randomUUID();
+        var medicine = Medicine.builder().id(medicineId).brandName("Vacina B").build();
+        var item = new MedicineCatalogItemOut(medicineId, "Vacina B", "MAPA-B");
+        var pageRequest = org.springframework.data.domain.PageRequest.of(1, 1);
+        when(medicineRepository.findByActiveTrue(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(medicine), pageRequest, 2));
+        when(medicineMapper.toCatalogItemOut(medicine)).thenReturn(item);
+
+        PageOut<MedicineCatalogItemOut> result = service.listCatalog(1, 1);
+
+        assertThat(result.data()).containsExactly(item);
+        assertThat(result.page()).isEqualTo(1);
+        assertThat(result.size()).isEqualTo(1);
+        assertThat(result.totalElements()).isEqualTo(2);
+        assertThat(result.totalPages()).isEqualTo(2);
+        assertThat(result.first()).isFalse();
+        assertThat(result.last()).isTrue();
+        var pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(medicineRepository).findByActiveTrue(pageable.capture());
+        assertThat(pageable.getValue().getSort()).isEqualTo(
+                Sort.by(Sort.Order.asc("brandName"), Sort.Order.asc("id")));
+    }
+
+    @Test
+    void shouldRejectInvalidCatalogPaginationBeforeReadingRepository() {
+        assertThatThrownBy(() -> service.listCatalog(-1, 20)).isInstanceOf(BadRequestException.class);
+        assertThatThrownBy(() -> service.listCatalog(0, 101)).isInstanceOf(BadRequestException.class);
+        verifyNoInteractions(medicineRepository, medicineMapper);
+    }
+
     private MedicineBatchIn validInput() {
         return new MedicineBatchIn("12345", "LOTE-001", LocalDate.of(2026, 1, 10),
                 LocalDate.of(2027, 1, 10), new BigDecimal("500.000"),
-                "Fornecedor Teste", "12345678000199", UUID.randomUUID());
+                "Fornecedor Teste", "12345678000199");
     }
 }

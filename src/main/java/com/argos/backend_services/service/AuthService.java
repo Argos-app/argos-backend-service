@@ -12,6 +12,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.AuthErrorCode;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.PageRequest;
 import com.google.firebase.auth.FirebaseToken;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -76,7 +77,7 @@ public class AuthService {
             userRepository.save(appUser);
         }
 
-        Property activeProperty = propertyRepository.findByUserIdAndActiveTrue(appUser.getId())
+        Property activeProperty = propertyRepository.findActiveLinkedProperties(appUser.getId(), PageRequest.of(0, 1))
                 .stream()
                 .findFirst()
                 .orElse(null);
@@ -95,7 +96,8 @@ public class AuthService {
                 appUser.getId(),
                 appUser.getPhotoUrl(),
                 appUser.getCpf(),
-                address);
+                address,
+                appUser.getPermission().getCode());
     }
 
     public void updateFirstAccess(UUID uuid) {

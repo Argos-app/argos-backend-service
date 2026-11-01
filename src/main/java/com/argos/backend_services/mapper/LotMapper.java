@@ -5,29 +5,25 @@ import com.argos.backend_services.dto.out.LotOut;
 import com.argos.backend_services.entity.ApplicationAnimal;
 import com.argos.backend_services.entity.Herd;
 import com.argos.backend_services.entity.Lot;
-import com.argos.backend_services.exception.LotNotFoundException;
 import com.argos.backend_services.repository.AnimalExceptionRepository;
 import com.argos.backend_services.repository.ApplicationAnimalRepository;
-import com.argos.backend_services.repository.HerdRepository;
-import com.argos.backend_services.repository.LotRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
 
 
 @Component
 @RequiredArgsConstructor
 public class LotMapper {
 
-    private final HerdRepository herdRepository;
-    private final LotRepository lotRepository;
     private final AnimalExceptionRepository animalExceptionRepository;
     private final ApplicationAnimalRepository applicationAnimalRepository;
 
     public LotOut toLotOut(Lot lot) {
         return LotOut.builder()
+                .lotId(lot.getId())
                 .lotName(lot.getLotCode())
+                .headCount(lot.getHeadCount())
                 .openDate(lot.getOpenDate())
                 .releaseSlaughterDate(lot.getSlaughterReleaseDate())
                 .category(lot.getCategory())
@@ -39,7 +35,7 @@ public class LotMapper {
                 .herdId(herd)
                 .parentId(null)
                 .lotCode(input.lotName())
-                .category(input.category())
+                .category(input.category().getDescription())
                 .isExceptionLot(false)
                 .headCount(input.headCount())
                 .slaughterReleaseDate(input.releaseSlaughterDate())
@@ -50,12 +46,6 @@ public class LotMapper {
                 .createdAt(null)
                 .updatedAt(null)
                 .build();
-    }
-
-    public Lot toEntity(LotIn input) throws LotNotFoundException {
-        var herd = herdRepository.findByHerdNameAndActiveTrue(input.herdName())
-                .orElseThrow(() -> new LotNotFoundException("Herd not found: " + input.herdName()));
-        return toEntity(input, herd);
     }
 
     public LotOut toOut(Lot lot) {

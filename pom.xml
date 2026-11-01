@@ -19,20 +19,11 @@
 
   <properties>
     <java.version>21</java.version>
-    <spring-cloud.version>2023.0.2</spring-cloud.version>
     <mapstruct.version>1.6.3</mapstruct.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-
-      <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-dependencies</artifactId>
-        <version>${spring-cloud.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
 
       <dependency>
         <groupId>org.testcontainers</groupId>
@@ -46,6 +37,12 @@
   </dependencyManagement>
 
   <dependencies>
+
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>6.0.0</version>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -80,13 +77,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-openfeign</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
+      <groupId>io.github.openfeign</groupId>
+      <artifactId>feign-core</artifactId>
+      <version>13.2.1</version>
     </dependency>
 
     <dependency>

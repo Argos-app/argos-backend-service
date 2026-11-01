@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @RequestMapping("/auth")
-@Tag(name = "Auth", description = "Rotas de autenticação e autorização do usuário")
+@Tag(name = "Autenticação", description = "Rotas de autenticação e autorização do usuário")
 public interface AuthControllerApi {
 
     @PostMapping("/signin")

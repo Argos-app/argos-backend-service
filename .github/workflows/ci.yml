@@ -8,6 +8,16 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest  
+    services:
+      mongodb:
+        image: mongo:7-jammy
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping: 1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,12 +37,12 @@ jobs:
             ${{ runner.os }}-maven
  
       - name: Build and run tests 
-        run: ./mvnw -B test -Dspring.profiles.active=test
+        run: ./mvnw -B verify -Dspring.profiles.active=test
 
       - name: Publish test report
         uses: dorny/test-reporter@v1
         if: always()
         with:
           name: JUnit Tests
-          path: target/surefire-reports/*.xml
+          path: 'target/*-reports/TEST-*.xml'
           reporter: java-junit

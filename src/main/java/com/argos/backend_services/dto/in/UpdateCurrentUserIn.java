@@ -6,9 +6,10 @@ import jakarta.validation.constraints.Size;
 public record UpdateCurrentUserIn(
         @Size(max = 120) String name,
         @Email @Size(max = 120) String email,
-        @Size(max = 512) String photoUrl
+        @Size(max = 512) String photoUrl,
+        @Size(max = 255) String address
 ) {
     public boolean isEmpty() {
-        return name == null && email == null && photoUrl == null;
+        return name == null && email == null && photoUrl == null && address == null;
     }
 }

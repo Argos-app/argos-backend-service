@@ -11,6 +11,7 @@ public record UserSignInResponseOut(
         UUID userId,
         String photoUrl,
         String cpf,
-        String address
+        String address,
+        String role
 ) {
 }

@@ -34,11 +34,14 @@ public interface LotControllerApi {
     ResponseEntity<List<LotOut>> listLot(@CurrentUser CurrentUserData currentUser);
 
     @PostMapping
-    @Operation(summary = "Cadastra lote", description = "Busca o rebanho pelo nome antes de cadastrar.")
+    @Operation(summary = "Cadastra lote", description = "Usa herdId para selecionar um rebanho ativo. Sem herdId, cria um rebanho com herdName e breed na propriedade do contexto autenticado ou na única propriedade ativa acessível. A contagem do rebanho é calculada pelos lotes ativos.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lote cadastrado"),
-            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos", content = @Content(examples = @ExampleObject(value = "{\"message\":\"herdName não pode ser vazio\"}"))),
-            @ApiResponse(responseCode = "422", description = "Rebanho não encontrado ou regra de negócio inválida", content = @Content(examples = @ExampleObject(value = "{\"message\":\"Herd not found\"}")))
+            @ApiResponse(responseCode = "400", description = "Dados inválidos ou propriedade ambígua"),
+            @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem acesso à propriedade"),
+            @ApiResponse(responseCode = "404", description = "Rebanho ou propriedade não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Nome de rebanho já cadastrado na propriedade")
     })
     ResponseEntity<Void> registerLot(@Valid @RequestBody LotIn lotIn,
                                      @CurrentUser CurrentUserData currentUser) throws LotNotFoundException, PropertyNotFoundException;

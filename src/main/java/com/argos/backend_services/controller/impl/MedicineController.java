@@ -4,6 +4,7 @@ import com.argos.backend_services.controller.MedicineControllerApi;
 import com.argos.backend_services.controller.annotation.CurrentUser;
 import com.argos.backend_services.dto.in.MedicineBatchIn;
 import com.argos.backend_services.dto.out.MedicineCreatedOut;
+import com.argos.backend_services.dto.out.MedicineCatalogItemOut;
 import com.argos.backend_services.dto.out.MedicineListItemOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.service.MedicineService;
@@ -31,5 +32,11 @@ public class MedicineController implements MedicineControllerApi {
     public ResponseEntity<PageOut<MedicineListItemOut>> list(UUID therapeuticCategoryId, int page, int size,
                                                               @CurrentUser CurrentUserData currentUser) {
         return ResponseEntity.ok(medicineService.list(therapeuticCategoryId, page, size, currentUser.id()));
+    }
+
+    @Override
+    public ResponseEntity<PageOut<MedicineCatalogItemOut>> catalog(int page, int size,
+                                                                    @CurrentUser CurrentUserData currentUser) {
+        return ResponseEntity.ok(medicineService.listCatalog(page, size));
     }
 }

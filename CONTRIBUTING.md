@@ -55,29 +55,28 @@ npm install
 
 > Este passo é obrigatório. Sem ele, o commitlint não vai funcionar e seus commits serão bloqueados.
 
-### 4. Configure o `application-local.properties`
+### 4. Configure as variáveis de ambiente da aplicação
 
-Crie o arquivo em `src/main/resources/application-local.properties` com os valores do seu `.env`:
+Disponibilize ao processo Java os valores do `.env.example`, incluindo `DATASOURCE_URL`,
+`DATASOURCE_USER`, `DATASOURCE_PASSWORD`, `MONGODB_URI`, `JWT_SECRET` e as variáveis `REDIS_*`.
+Configure também a origem das credenciais Firebase usada no ambiente local.
 
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/app_db
-spring.datasource.username=app_user
-spring.datasource.password=sua_senha
+No IntelliJ, use o campo **Environment variables** da configuração de execução, ou configure
+explicitamente o carregamento do `.env`. Ao preencher variáveis manualmente, use os valores
+finais das URLs, com host, porta e credenciais resolvidos.
 
-spring.data.redis.host=localhost
-spring.data.redis.port=6379
-spring.data.redis.password=sua_senha
+O Spring Boot não lê `.env` automaticamente. O Compose usa esse arquivo para configurar os
+containers, mas isso não disponibiliza suas variáveis ao Java executado fora deles.
 
-spring.data.mongodb.uri=mongodb://app_user:sua_senha@localhost:27017/app_db?authSource=admin
-```
-
-> Este arquivo está no `.gitignore` e não deve ser versionado.
+O Redis é configurado no `application.yaml`, compartilhado pelos perfis. Local e homologação
+usam `dev`; produção usa `prod`. Cada ambiente deve apontar para seus próprios bancos e para
+o Redis/banco lógico usado pelo produtor das métricas daquele ambiente.
 
 ### 5. Configure o perfil local no IntelliJ
 
 1. Abra **Run > Edit Configurations**
 2. Selecione `BackendServicesApplication`
-3. No campo **Active profiles**, digite: `local`
+3. No campo **Active profiles**, digite: `dev`
 4. Clique em **OK**
 
 ---

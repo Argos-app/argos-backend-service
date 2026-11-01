@@ -54,6 +54,10 @@ com o código do Firebase. Nenhum desses logs contém tokens, e-mails ou chaves 
 
 O aplicativo deve enviar seu token FCM em `POST /api/v1/devices/sync` após o login
 e quando o token for renovado. No logout, deve chamar `DELETE /api/v1/devices/{deviceId}`.
+Para consultar o registro, chame `GET /api/v1/devices/{deviceId}/registration` com o JWT
+da aplicação. A resposta é `200 {"registered":true}` se o dispositivo estiver ativo e
+com token push, ou `400 {"registered":false}` se existir para o usuário, mas estiver
+inativo ou sem token. Um ID inexistente ou pertencente a outro usuário retorna `404`.
 O backend usa as mesmas credenciais Firebase Admin da autenticação para enviar push.
 
 A rotina `argos.routines.withdrawal.cron` (padrão: 8h, no fuso

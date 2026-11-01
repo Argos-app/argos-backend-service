@@ -52,7 +52,7 @@ public class LotService {
                 : findHerd(input.herdId(), userId);
         var lot = mapper.toEntity(input, herd);
         lotRepository.saveAndFlush(lot);
-        reportHerdService.saveHerd(userId, herd.getPropertyId().getId());
+        reportHerdService.saveSingleHerd(userId, herd.getId());
     }
 
     private Herd findHerd(UUID herdId, UUID userId) {
@@ -71,7 +71,8 @@ public class LotService {
         var herd = Herd.builder().propertyId(property).herdName(input.herdName()).breed(input.breed())
                 .headCount(0).active(true).build();
         try {
-            return herdRepository.saveAndFlush(herd);
+            herdRepository.save(herd);
+            return herd;
         } catch (DataIntegrityViolationException exception) {
             for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
                 if (cause instanceof ConstraintViolationException violation

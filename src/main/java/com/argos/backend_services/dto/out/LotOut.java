@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -20,6 +21,8 @@ public class LotOut {
 
     @Schema(description = "Nome do lote")
     private String lotName;
+    @Schema(description = "Id do lote")
+    private UUID lotId;
     @Schema(description = "Data de criação do lote")
     private LocalDate openDate;
     @Schema(description = "Dia estimado de abate")

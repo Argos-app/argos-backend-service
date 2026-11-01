@@ -5,6 +5,7 @@ import com.argos.backend_services.controller.annotation.CurrentUser;
 import com.argos.backend_services.dto.in.LotIn;
 import com.argos.backend_services.dto.out.LotOut;
 import com.argos.backend_services.exception.LotNotFoundException;
+import com.argos.backend_services.exception.PropertyNotFoundException;
 import com.argos.backend_services.service.LotService;
 import com.argos.backend_services.security.CurrentUserData;
 import jakarta.validation.Valid;
@@ -29,8 +30,8 @@ public class LotController implements LotControllerApi {
 
     @Override
     public ResponseEntity<Void> registerLot(@RequestBody @Valid LotIn lotIn,
-                                            @CurrentUser CurrentUserData currentUser) throws LotNotFoundException {
-        lotService.registerLot(lotIn, currentUser.id());
+                                            @CurrentUser CurrentUserData currentUser) throws LotNotFoundException, PropertyNotFoundException {
+        lotService.registerLot(lotIn, currentUser.id(), currentUser.propertyId());
         return ResponseEntity.ok().build();
     }
 

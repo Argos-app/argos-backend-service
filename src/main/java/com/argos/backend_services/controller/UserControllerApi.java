@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RequestMapping("/users")
-@Tag(name = "Users", description = "Rotas de gestão de usuários e seus acessos")
+@Tag(name = "Usuários", description = "Rotas de gestão de usuários e seus acessos")
 public interface UserControllerApi {
 
     @GetMapping("/me")
@@ -156,13 +156,15 @@ public interface UserControllerApi {
     ResponseEntity<Void> deleteUser(@Parameter(description = "Identificador do usuário") @PathVariable String userId,
             @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser);
 
-    @PatchMapping("/update-perfil")
+    @PatchMapping({"/update-profile"})
     @Operation(summary = "Atualiza o perfil do usuário autenticado",
-            description = "Atualiza nome, e-mail e/ou URL da foto. Os campos não enviados são preservados.")
+            description = "Atualiza nome, e-mail, URL da foto e/ou endereço. Os campos não enviados são preservados.")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Perfil atualizado"),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos, vazios ou duplicados"),
-            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+            @ApiResponse(responseCode = "400", description = "Dados inválidos, vazios, duplicados ou múltiplas propriedades ativas vinculadas"),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para alterar o endereço da propriedade"),
+            @ApiResponse(responseCode = "404", description = "Usuário ou propriedade ativa vinculada não encontrado")
     })
     ResponseEntity<Void> updateCurrentUser(
             @Valid @RequestBody UpdateCurrentUserIn data,

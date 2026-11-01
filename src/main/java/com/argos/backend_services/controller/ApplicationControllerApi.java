@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RequestMapping("/application")
-@Tag(name = "Applications", description = "Gerenciamento e consulta de aplicações")
+@Tag(name = "Aplicações", description = "Gerenciamento e consulta de aplicações")
 public interface ApplicationControllerApi {
 
     @PostMapping

@@ -10,6 +10,7 @@ import java.util.UUID;
 @Builder
 public class ApplicationWithdrawalOut {
     private UUID applicationId;
+    private UUID lotId;
     private UUID userId;
     private String lotName;
     private String medicineName;

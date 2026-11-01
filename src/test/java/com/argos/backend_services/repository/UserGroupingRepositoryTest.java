@@ -23,6 +23,7 @@ class UserGroupingRepositoryTest {
     @Autowired private EntityManager em;
     @Autowired private UserRepository users;
     @Autowired private UserPropertyRepository links;
+    @Autowired private PropertyRepository properties;
     private AppUser administrator;
     private AppUser firstUser;
     private AppUser secondUser;
@@ -51,6 +52,13 @@ class UserGroupingRepositoryTest {
         link(foreignUser, foreign);
         em.flush();
         em.clear();
+    }
+
+    @Test
+    void shouldResolveOnlyActiveOwnedFarmsForReportExport() {
+        assertThat(properties.findByUserIdAndActiveTrue(administrator.getId()))
+                .extracting(Property::getName).containsExactlyInAnyOrder("Alpha", "Zeta");
+        assertThat(properties.findByUserIdAndActiveTrue(firstUser.getId())).isEmpty();
     }
 
     @Test

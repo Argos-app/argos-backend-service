@@ -67,11 +67,11 @@ class ApplicationServiceTest {
         Medicine medicine = Medicine.builder().id(medicineId).brandName("Ivermectina").build();
         MedicineBatch batch = MedicineBatch.builder().id(batchId).medicineId(medicine).build();
         ApplicationIn input = ApplicationIn.builder()
-                .lotName("LOTE-001").medicineName("Ivermectina")
+                .lotId(lotId).lotName("LOTE-001").medicineName("Ivermectina")
                 .dose(new BigDecimal("10.5")).unit("ML").route("ORAL")
                 .goal("Tratamento").build();
 
-        when(lotRepository.findWithHerdAndPropertyByLotCode("LOTE-001")).thenReturn(Optional.of(lot));
+        when(lotRepository.findWithHerdAndPropertyById(lotId)).thenReturn(Optional.of(lot));
         when(medicineRepository.findByBrandName("Ivermectina")).thenReturn(Optional.of(medicine));
         when(medicineBatchRepository.findByMedicineId(medicine)).thenReturn(Optional.of(batch));
 

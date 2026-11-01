@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RequestMapping("/devices")
-@Tag(name = "Devices", description = "Sincronização de dispositivos para notificações push")
+@Tag(name = "Dispositivos", description = "Sincronização de dispositivos para notificações push")
 public interface DeviceControllerApi {
     @PostMapping("/sync")
     @Operation(summary = "Cadastra ou atualiza o dispositivo",

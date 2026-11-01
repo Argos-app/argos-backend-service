@@ -23,7 +23,7 @@ public class ApplicationWithdrawalService {
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final ApplicationWithdrawalMapper mapper;
     private final PropertyAccessService propertyAccessService;
-    private final Clock clock = Clock.systemDefaultZone();
+    private final Clock clock;
 
     @Transactional(readOnly = true)
     public List<ApplicationWithdrawalOut> findNearDate(

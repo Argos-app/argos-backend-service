@@ -43,9 +43,12 @@ public class MedicineService {
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final MedicineMapper medicineMapper;
     private final Clock clock;
+    private final PropertyAccessService propertyAccessService;
+    private final com.argos.backend_services.repository.PropertyRepository propertyRepository;
 
     @Transactional
-    public MedicineCreatedOut registerBatch(MedicineBatchIn input, UUID userId) {
+    public MedicineCreatedOut registerBatch(MedicineBatchIn input, UUID userId, UUID requestedPropertyId) {
+        UUID propertyId = resolveProperty(userId, requestedPropertyId);
         var today = LocalDate.now(clock);
         validateDates(input, today);
 
@@ -53,8 +56,8 @@ public class MedicineService {
                 .filter(medicineCandidate -> medicineCandidate.isActive())
                 .orElseThrow(() -> new NotFoundException("Medicamento não encontrado para o registro MAPA informado"));
 
-        if (medicineBatchRepository.existsByMedicineIdAndBatchNumber(
-                medicine, input.batchNumber().trim())) {
+        if (medicineBatchRepository.existsByMedicineIdAndBatchNumberAndPropertyId_Id(
+                medicine, input.batchNumber().trim(), propertyId)) {
             throw new BadRequestException("Já existe um lote com este número para o medicamento informado");
         }
 
@@ -73,6 +76,7 @@ public class MedicineService {
 
         var batch = medicineBatchRepository.save(MedicineBatch.builder()
                 .medicineId(medicine)
+                .propertyId(propertyRepository.getReferenceById(propertyId))
                 .batchNumber(input.batchNumber().trim())
                 .manufactureDate(input.manufactureDate())
                 .expiryDate(input.expiryDate())
@@ -93,13 +97,14 @@ public class MedicineService {
     }
 
     @Transactional(readOnly = true)
-    public PageOut<MedicineListItemOut> list(UUID therapeuticCategoryId, int page, int size, UUID userId) {
+    public PageOut<MedicineListItemOut> list(UUID therapeuticCategoryId, int page, int size, UUID userId, UUID requestedPropertyId) {
+        UUID propertyId = resolveProperty(userId, requestedPropertyId);
         var pageable = PageableUtils.createPageRequest(page, size,
                 Sort.by(Sort.Order.asc("expiryDate"), Sort.Order.asc("medicineId.brandName"),
                         Sort.Order.asc("batchNumber")));
 
-        var result = filterByTherapeuticCategory(
-                therapeuticCategoryId, pageable);
+        var result = medicineBatchRepository.findAvailableInProperty(
+                propertyId, MedicineBatch.Status.DISPONIVEL, therapeuticCategoryId, pageable);
         var data = result.getContent().stream()
                 .map(batch -> medicineMapper.toListItemOut(
                         batch,
@@ -142,12 +147,18 @@ public class MedicineService {
         }
     }
 
-    private Page<MedicineBatch> filterByTherapeuticCategory(
-            UUID therapeuticCategoryId, Pageable pageable) {
-
-        return therapeuticCategoryId == null
-                ? medicineBatchRepository.findByStatus(MedicineBatch.Status.DISPONIVEL, pageable)
-                : medicineBatchRepository.findByStatusAndMedicineId_TherapeuticCategoryId(
-                MedicineBatch.Status.DISPONIVEL, therapeuticCategoryId, pageable);
+    private UUID resolveProperty(UUID userId, UUID requestedPropertyId) {
+        if (requestedPropertyId != null) {
+            propertyAccessService.requireActiveAccess(userId, requestedPropertyId);
+            return requestedPropertyId;
+        }
+        var properties = propertyAccessService.activePropertyIds(userId);
+        if (properties.isEmpty()) {
+            throw new org.springframework.security.access.AccessDeniedException("Usuário não possui acesso a nenhuma propriedade");
+        }
+        if (properties.size() != 1) {
+            throw new BadRequestException("Informe propertyId para selecionar a propriedade");
+        }
+        return properties.getFirst();
     }
 }

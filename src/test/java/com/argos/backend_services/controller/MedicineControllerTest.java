@@ -5,6 +5,7 @@ import com.argos.backend_services.controller.impl.MedicineController;
 import com.argos.backend_services.dto.in.MedicineBatchIn;
 import com.argos.backend_services.dto.out.MedicineCreatedOut;
 import com.argos.backend_services.dto.out.MedicineCatalogItemOut;
+import com.argos.backend_services.dto.out.MedicineListItemOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.exception.BadRequestException;
 import com.argos.backend_services.repository.UserRepository;
@@ -33,6 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.nullValue;
 
 @WebMvcTest(MedicineController.class)
 @Import({SecurityConfig.class, JwtService.class})
@@ -89,6 +91,33 @@ class MedicineControllerTest {
                 .andExpect(jsonPath("$.medicineBatchId").value(batchId.toString()));
 
         verify(medicineService).registerBatch(input, USER_ID);
+    }
+
+    @Test
+    void shouldSerializeExpandedStockItemFieldsAndNullHistoricalSupplier() throws Exception {
+        var item = new MedicineListItemOut(UUID.randomUUID(), "Ivermectina", null,
+                java.time.LocalDate.of(2026, 1, 10), java.time.LocalDate.of(2028, 1, 10),
+                java.math.BigDecimal.valueOf(12.5), java.math.BigDecimal.valueOf(1.5), "ml", 28,
+                "LOTE-2026-001", "Ivermectina", "Antiparasitário");
+        when(medicineService.list(null, 0, 20, USER_ID))
+                .thenReturn(new PageOut<>(List.of(item), 0, 20, 1, 1, true, true));
+
+        mockMvc.perform(get("/medicines").with(authentication(userAuthentication())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].medicineBatchId").value(item.medicineBatchId().toString()))
+                .andExpect(jsonPath("$.data[0].medicineName").value("Ivermectina"))
+                .andExpect(jsonPath("$.data[0].supplier").value(nullValue()))
+                .andExpect(jsonPath("$.data[0].manufactureDate").value("2026-01-10"))
+                .andExpect(jsonPath("$.data[0].expiryDate").value("2028-01-10"))
+                .andExpect(jsonPath("$.data[0].quantity").value(12.5))
+                .andExpect(jsonPath("$.data[0].dose").value(1.5))
+                .andExpect(jsonPath("$.data[0].doseUnit").value("ml"))
+                .andExpect(jsonPath("$.data[0].withdrawalDays").value(28))
+                .andExpect(jsonPath("$.data[0].batch").value("LOTE-2026-001"))
+                .andExpect(jsonPath("$.data[0].activeIngredient").value("Ivermectina"))
+                .andExpect(jsonPath("$.data[0].therapeuticCategory").value("Antiparasitário"));
+
+        verify(medicineService).list(null, 0, 20, USER_ID);
     }
     @Test
     void shouldRejectInvalidPaginationParameters() throws Exception {

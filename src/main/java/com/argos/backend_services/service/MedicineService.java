@@ -62,6 +62,15 @@ public class MedicineService {
                 .filter(userCandidate -> Boolean.TRUE.equals(userCandidate.getActive()))
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado ou inativo"));
 
+        var supplier = supplierRepository.findByCnpj(input.supplierCnpj().trim())
+                .orElseGet(() -> supplierRepository.save(Supplier.builder()
+                        .companyName(input.supplierName().trim())
+                        .cnpj(input.supplierCnpj().trim())
+                        .active(true)
+                        .build()));
+        medicine.setSupplierId(supplier);
+        medicineRepository.save(medicine);
+
         var batch = medicineBatchRepository.save(MedicineBatch.builder()
                 .medicineId(medicine)
                 .batchNumber(input.batchNumber().trim())
@@ -122,30 +131,6 @@ public class MedicineService {
                 result.getTotalPages(),
                 result.isFirst(),
                 result.isLast());
-    }
-
-    private void findOrCreateSupplier(MedicineBatchIn input) {
-        var cnpj = input.supplierCnpj().trim();
-        if (supplierRepository.findByCnpj(cnpj).isPresent()) {
-            var supplier = supplierRepository.save(Supplier.builder()
-                    .companyName(input.supplierName().trim())
-                    .cnpj(cnpj)
-                    .active(true)
-                    .build());
-
-            var medicine = medicineRepository.findByMapaRegistration(input.productRegistration());
-            medicineRepository.save(Medicine
-                    .builder()
-                    .createdAt(medicine.get().getCreatedAt())
-                    .needsPrescription(medicine.get().isNeedsPrescription())
-                    .id(medicine.get().getId())
-                    .supplierId(supplier)
-                    .activeIngredient(medicine.get().getActiveIngredient())
-                    .description(medicine.get().getDescription())
-                    .dose(medicine.get().getDose())
-                    .active(true)
-                    .build());
-        }
     }
 
     private void validateDates(MedicineBatchIn input, LocalDate today) {

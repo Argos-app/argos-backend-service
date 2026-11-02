@@ -25,13 +25,14 @@ public class MedicineController implements MedicineControllerApi {
     @Override
     public ResponseEntity<MedicineCreatedOut> create(MedicineBatchIn input,
                                                       @CurrentUser CurrentUserData currentUser) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(medicineService.registerBatch(input, currentUser.id()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(medicineService.registerBatch(input, currentUser.id(), currentUser.propertyId()));
     }
 
     @Override
-    public ResponseEntity<PageOut<MedicineListItemOut>> list(UUID therapeuticCategoryId, int page, int size,
+    public ResponseEntity<PageOut<MedicineListItemOut>> list(UUID therapeuticCategoryId, UUID propertyId, int page, int size,
                                                               @CurrentUser CurrentUserData currentUser) {
-        return ResponseEntity.ok(medicineService.list(therapeuticCategoryId, page, size, currentUser.id()));
+        return ResponseEntity.ok(medicineService.list(therapeuticCategoryId, page, size, currentUser.id(),
+                propertyId == null ? currentUser.propertyId() : propertyId));
     }
 
     @Override

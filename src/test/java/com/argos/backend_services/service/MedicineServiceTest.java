@@ -65,8 +65,9 @@ class MedicineServiceTest {
         medicineMapper = mock(MedicineMapper.class);
         propertyAccessService = mock(PropertyAccessService.class);
         propertyRepository = mock(PropertyRepository.class);
-        when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(
-                com.argos.backend_services.entity.Property.builder().id(propertyId).active(true).build()));
+        var property = com.argos.backend_services.entity.Property.builder().id(propertyId).active(true).build();
+        when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+        when(propertyRepository.getReferenceById(propertyId)).thenReturn(property);
         service = new MedicineService(medicineRepository, medicineBatchRepository, supplierRepository,
                 stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock, propertyAccessService, propertyRepository);
     }

@@ -208,7 +208,7 @@ class MedicineServiceTest {
         var input = new MedicineBatchIn("12345", "LOTE-1", LocalDate.of(2026, 1, 10),
                 LocalDate.of(2026, 10, 11), new BigDecimal("5.000"), "Fornecedor", "12345678000199");
 
-        assertThatThrownBy(() -> service.registerBatch(input, UUID.randomUUID()))
+        assertThatThrownBy(() -> service.registerBatch(input, UUID.randomUUID(), propertyId))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("validade deve ser futura");
 

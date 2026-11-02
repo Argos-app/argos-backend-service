@@ -19,7 +19,28 @@ public interface MedicineBatchRepository extends JpaRepository<MedicineBatch, UU
 
     Optional<MedicineBatch> findByMedicineId(Medicine id);
 
-    boolean existsByMedicineIdAndBatchNumber(Medicine medicine, String batchNumber);
+    boolean existsByMedicineIdAndBatchNumberAndPropertyId_Id(
+            Medicine medicine, String batchNumber, UUID propertyId);
+
+    boolean existsByIdAndPropertyId_Id(UUID batchId, UUID propertyId);
+
+    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "medicineId.supplierId"})
+    @Query(value = """
+            select mb from MedicineBatch mb join mb.medicineId m
+            where mb.propertyId.id = :propertyId
+              and mb.status = :status
+              and (:categoryId is null or m.therapeuticCategoryId.id = :categoryId)
+            """, countQuery = """
+            select count(mb) from MedicineBatch mb join mb.medicineId m
+            where mb.propertyId.id = :propertyId
+              and mb.status = :status
+              and (:categoryId is null or m.therapeuticCategoryId.id = :categoryId)
+            """)
+    Page<MedicineBatch> findAvailableInProperty(
+            @Param("propertyId") UUID propertyId,
+            @Param("status") MedicineBatch.Status status,
+            @Param("categoryId") UUID categoryId,
+            Pageable pageable);
 
     @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "medicineId.supplierId"})
     Page<MedicineBatch> findByStatus(MedicineBatch.Status status, Pageable pageable);

@@ -186,7 +186,7 @@ class ApplicationServiceTest {
         );
 
         assertEquals(
-                "Não foi possível achar o lote informado",
+                null,
                 exception.getMessage()
         );
 

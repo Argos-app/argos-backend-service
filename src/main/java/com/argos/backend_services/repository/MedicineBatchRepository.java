@@ -32,20 +32,26 @@ public interface MedicineBatchRepository extends JpaRepository<MedicineBatch, UU
 
     @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "medicineId.supplierId"})
     @Query(value = """
-            select distinct mb from MedicineBatch mb
-            join Application a on a.medicineBatchId = mb
-            where a.lotId.herdId.propertyId.id = :propertyId
-              and mb.status = :status
+            select mb from MedicineBatch mb
+            where mb.status = :status
               and (:categoryId is null or mb.medicineId.therapeuticCategoryId.id = :categoryId)
+              and exists (
+                  select a.id from Application a
+                  where a.medicineBatchId = mb
+                    and a.lotId.herdId.propertyId.id in :propertyIds
+              )
             """, countQuery = """
-            select count(distinct mb.id) from MedicineBatch mb
-            join Application a on a.medicineBatchId = mb
-            where a.lotId.herdId.propertyId.id = :propertyId
-              and mb.status = :status
+            select count(mb) from MedicineBatch mb
+            where mb.status = :status
               and (:categoryId is null or mb.medicineId.therapeuticCategoryId.id = :categoryId)
+              and exists (
+                  select a.id from Application a
+                  where a.medicineBatchId = mb
+                    and a.lotId.herdId.propertyId.id in :propertyIds
+              )
             """)
-    Page<MedicineBatch> findAppliedInProperty(
-            @Param("propertyId") UUID propertyId,
+    Page<MedicineBatch> findAppliedInProperties(
+            @Param("propertyIds") Collection<UUID> propertyIds,
             @Param("status") MedicineBatch.Status status,
             @Param("categoryId") UUID categoryId,
             Pageable pageable);

@@ -35,15 +35,9 @@ public class ApplicationService {
         var propertyId = lot.getHerdId().getPropertyId().getId();
         propertyAccessService.requireActiveAccess(userId, propertyId);
 
-        var medicine = medicineRepository.findByBrandName(applicationIn.medicineName())
-                .orElseThrow(() -> new MedicineNotFoundException("Could not found medicine by name"));
-
-        var medicineBatch = medicineBatchRepository.findByMedicineId(medicine)
-                .orElseThrow(() -> new MedicineNotFoundException("Could not found medicine batch by medicine id"));
-
         databaseRoutineRepository.registerApplication
                 (lot.getId(),
-                medicineBatch.getId(),
+                applicationIn.medicineBatchId(),
                 userId,
                 applicationIn.dose(),
                 applicationIn.unit(),

@@ -47,7 +47,7 @@ public interface MedicineControllerApi {
 
     @GetMapping
     @Operation(summary = "Lista os lotes de medicamentos disponíveis",
-            description = "Retorna nome, fornecedor associado ao medicamento, fabricação, validade, dose e unidade, saldo, carência, lote, princípio ativo e categoria terapêutica. O filtro de categoria é opcional.")
+            description = "Retorna nome, fornecedor associado ao medicamento, fabricação, validade, dose e unidade, saldo, carência, lote, princípio ativo e categoria terapêutica. A listagem considera as propriedades ativas vinculadas ao usuário autenticado. O filtro de categoria é opcional.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Página de medicamentos disponíveis",
                     content = @Content(schema = @Schema(implementation = PageOut.class))),
@@ -57,8 +57,6 @@ public interface MedicineControllerApi {
     ResponseEntity<PageOut<MedicineListItemOut>> list(
             @Parameter(description = "Identificador opcional da categoria terapêutica", schema = @Schema(format = "uuid"))
             @RequestParam(required = false) UUID therapeuticCategoryId,
-            @Parameter(description = "Propriedade selecionada", schema = @Schema(format = "uuid"))
-            @RequestParam(required = false) UUID propertyId,
             @Parameter(description = "Página baseada em zero", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Quantidade de itens por página, entre 1 e 100", example = "20")

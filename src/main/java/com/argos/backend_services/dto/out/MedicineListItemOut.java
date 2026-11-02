@@ -10,7 +10,7 @@ import java.util.UUID;
 public record MedicineListItemOut(
         @Schema(description = "Identificador do lote de medicamento", format = "uuid") UUID medicineBatchId,
         @Schema(description = "Nome comercial do medicamento", example = "Ivermectina") String medicineName,
-        @Schema(description = "Fornecedor associado ao lote; nulo para lotes históricos sem essa informação", example = "Distribuidora Veterinária Ltda", nullable = true) String supplier,
+        @Schema(description = "Fornecedor associado ao medicamento", example = "Distribuidora Veterinária Ltda") String supplier,
         @Schema(description = "Data de fabricação", example = "2026-01-10") LocalDate manufactureDate,
         @Schema(description = "Data de validade", example = "2028-01-10") LocalDate expiryDate,
         @Schema(description = "Saldo atual disponível no lote", example = "500.000") BigDecimal quantity,

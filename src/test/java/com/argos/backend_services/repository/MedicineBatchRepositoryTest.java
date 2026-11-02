@@ -24,21 +24,16 @@ class MedicineBatchRepositoryTest {
     @Autowired private EntityManager em;
     @Autowired private MedicineBatchRepository medicineBatches;
 
-    private Supplier batchSupplier;
-
     @BeforeEach
     void setUp() {
-        batchSupplier = Supplier.builder().companyName("Fornecedor do lote")
-                .cnpj("12345678000190").build();
-        var catalogSupplier = Supplier.builder().companyName("Fornecedor do catálogo")
+        var supplier = Supplier.builder().companyName("Fornecedor do medicamento")
                 .cnpj("12345678000191").build();
         var category = TherapeuticCategory.builder().name("Vacinas").build();
-        em.persist(batchSupplier);
-        em.persist(catalogSupplier);
+        em.persist(supplier);
         em.persist(category);
 
         var medicine = Medicine.builder()
-                .supplierId(catalogSupplier)
+                .supplierId(supplier)
                 .therapeuticCategoryId(category)
                 .brandName("Vacina")
                 .activeIngredient("Ativo")
@@ -54,14 +49,14 @@ class MedicineBatchRepositoryTest {
                 .build();
         em.persist(medicine);
 
-        em.persist(batch(medicine, "LOTE-NOVO", batchSupplier));
-        em.persist(batch(medicine, "LOTE-HISTORICO", null));
+        em.persist(batch(medicine, "LOTE-NOVO"));
+        em.persist(batch(medicine, "LOTE-HISTORICO"));
         em.flush();
         em.clear();
     }
 
     @Test
-    void shouldFetchOptionalSupplierAssociatedWithBatch() {
+    void shouldFetchSupplierAssociatedWithMedicineForEveryBatch() {
         var page = medicineBatches.findByStatus(MedicineBatch.Status.DISPONIVEL, PageRequest.of(0, 10));
 
         assertThat(page.getContent()).hasSize(2);
@@ -72,15 +67,13 @@ class MedicineBatchRepositoryTest {
                 .filter(batch -> batch.getBatchNumber().equals("LOTE-HISTORICO"))
                 .findFirst().orElseThrow();
 
-        assertThat(newBatch.getSupplierId().getCompanyName()).isEqualTo("Fornecedor do lote");
-        assertThat(historicalBatch.getSupplierId()).isNull();
-        assertThat(newBatch.getMedicineId().getSupplierId().getCompanyName()).isEqualTo("Fornecedor do catálogo");
+        assertThat(newBatch.getMedicineId().getSupplierId().getCompanyName()).isEqualTo("Fornecedor do medicamento");
+        assertThat(historicalBatch.getMedicineId().getSupplierId().getCompanyName()).isEqualTo("Fornecedor do medicamento");
     }
 
-    private MedicineBatch batch(Medicine medicine, String number, Supplier supplier) {
+    private MedicineBatch batch(Medicine medicine, String number) {
         return MedicineBatch.builder()
                 .medicineId(medicine)
-                .supplierId(supplier)
                 .batchNumber(number)
                 .manufactureDate(LocalDate.of(2026, 1, 1))
                 .expiryDate(LocalDate.of(2028, 1, 1))

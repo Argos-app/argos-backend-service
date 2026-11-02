@@ -87,6 +87,7 @@ class MedicineServiceTest {
         var result = service.registerBatch(input, user.getId());
 
         assertThat(result.medicineBatchId()).isEqualTo(batchId);
+        assertThat(medicine.getSupplierId()).isEqualTo(supplier);
         var batchCaptor = ArgumentCaptor.forClass(MedicineBatch.class);
         verify(medicineBatchRepository).save(batchCaptor.capture());
         assertThat(batchCaptor.getValue().getMedicineId()).isEqualTo(medicine);
@@ -100,7 +101,7 @@ class MedicineServiceTest {
     }
 
     @Test
-    void registerBatchAssociatesSupplierWithBatch() {
+    void registerBatchAssociatesSupplierWithMedicine() {
         var medicine = Medicine.builder().id(UUID.randomUUID()).active(true).needsPrescription(false).build();
         var user = AppUser.builder().id(UUID.randomUUID()).active(true).build();
         var supplier = Supplier.builder().id(UUID.randomUUID()).companyName("Novo Fornecedor")
@@ -122,13 +123,12 @@ class MedicineServiceTest {
         verify(supplierRepository).save(supplierCaptor.capture());
         assertThat(supplierCaptor.getValue().getCompanyName()).isEqualTo("Novo Fornecedor");
         assertThat(supplierCaptor.getValue().getCnpj()).isEqualTo("12345678000199");
-        var batchCaptor = ArgumentCaptor.forClass(MedicineBatch.class);
-        verify(medicineBatchRepository).save(batchCaptor.capture());
-        assertThat(batchCaptor.getValue().getSupplierId()).isEqualTo(supplier);
+        verify(medicineRepository).save(medicine);
+        assertThat(medicine.getSupplierId()).isEqualTo(supplier);
     }
 
     @Test
-    void registerBatchReusesExistingSupplierWithoutChangingMedicineSupplier() {
+    void registerBatchReusesExistingSupplierAndAssociatesItWithMedicine() {
         var originalSupplier = Supplier.builder().id(UUID.randomUUID()).companyName("Fornecedor do catálogo")
                 .cnpj("99999999000199").active(true).build();
         var existingSupplier = Supplier.builder().id(UUID.randomUUID()).companyName("Fornecedor do lote")
@@ -148,15 +148,12 @@ class MedicineServiceTest {
         service.registerBatch(input, user.getId());
 
         verify(supplierRepository, never()).save(any());
-        var batchCaptor = ArgumentCaptor.forClass(MedicineBatch.class);
-        verify(medicineBatchRepository).save(batchCaptor.capture());
-        assertThat(batchCaptor.getValue().getSupplierId()).isEqualTo(existingSupplier);
-        assertThat(medicine.getSupplierId()).isEqualTo(originalSupplier);
-        verify(medicineRepository, never()).save(any());
+        verify(medicineRepository).save(medicine);
+        assertThat(medicine.getSupplierId()).isEqualTo(existingSupplier);
     }
 
     @Test
-    void registerBatchSupplierIsReturnedByStockListWithoutChangingMedicineSupplier() {
+    void registerBatchSupplierIsReturnedByStockListFromMedicine() {
         var catalogSupplier = Supplier.builder().id(UUID.randomUUID()).companyName("Fornecedor do catálogo")
                 .cnpj("99999999000199").active(true).build();
         var medicine = Medicine.builder().id(UUID.randomUUID()).supplierId(catalogSupplier)
@@ -166,7 +163,7 @@ class MedicineServiceTest {
         var input = validInput();
         var batchId = UUID.randomUUID();
         var savedBatch = new MedicineBatch[1];
-        var lotSupplier = Supplier.builder().id(UUID.randomUUID()).companyName(input.supplierName())
+        var medicineSupplier = Supplier.builder().id(UUID.randomUUID()).companyName(input.supplierName())
                 .cnpj(input.supplierCnpj()).active(true).build();
 
         medicineMapper = Mappers.getMapper(MedicineMapper.class);
@@ -176,7 +173,7 @@ class MedicineServiceTest {
         when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.empty());
-        when(supplierRepository.save(any(Supplier.class))).thenReturn(lotSupplier);
+        when(supplierRepository.save(any(Supplier.class))).thenReturn(medicineSupplier);
         when(medicineBatchRepository.save(any(MedicineBatch.class))).thenAnswer(invocation -> {
             var batch = invocation.getArgument(0, MedicineBatch.class);
             batch.setId(batchId);
@@ -195,7 +192,7 @@ class MedicineServiceTest {
         assertThat(listed.supplier()).isEqualTo(input.supplierName());
         assertThat(listed.doseUnit()).isEqualTo("ml");
         assertThat(listed.quantity()).isEqualByComparingTo("450.000");
-        assertThat(medicine.getSupplierId()).isEqualTo(catalogSupplier);
+        assertThat(medicine.getSupplierId()).isEqualTo(medicineSupplier);
     }
 
     @Test
@@ -228,6 +225,8 @@ class MedicineServiceTest {
         service.registerBatch(input, user.getId());
 
         verify(supplierRepository, never()).save(any());
+        verify(medicineRepository).save(medicine);
+        assertThat(medicine.getSupplierId()).isEqualTo(supplier);
         verify(stockMovementRepository).save(any());
     }
 

@@ -34,9 +34,10 @@ class MedicineMapperTest {
     }
 
     @Test
-    void toListItemOutMapsExpandedBatchDetailsAndAllowsHistoricalSupplierToBeNull() {
-        var supplier = Supplier.builder().companyName("Fornecedor do lote").build();
+    void toListItemOutMapsExpandedBatchDetailsAndMedicineSupplier() {
+        var supplier = Supplier.builder().companyName("Fornecedor do medicamento").build();
         var medicine = Medicine.builder()
+                .supplierId(supplier)
                 .brandName("Ivermectina")
                 .dose(new BigDecimal("1.500"))
                 .unit("ml")
@@ -47,7 +48,6 @@ class MedicineMapperTest {
         var batch = MedicineBatch.builder()
                 .id(UUID.randomUUID())
                 .medicineId(medicine)
-                .supplierId(supplier)
                 .manufactureDate(LocalDate.of(2026, 1, 10))
                 .expiryDate(LocalDate.of(2028, 1, 10))
                 .batchNumber("LOTE-2026-001")
@@ -57,7 +57,7 @@ class MedicineMapperTest {
 
         assertThat(result.medicineBatchId()).isEqualTo(batch.getId());
         assertThat(result.medicineName()).isEqualTo("Ivermectina");
-        assertThat(result.supplier()).isEqualTo("Fornecedor do lote");
+        assertThat(result.supplier()).isEqualTo("Fornecedor do medicamento");
         assertThat(result.manufactureDate()).isEqualTo(LocalDate.of(2026, 1, 10));
         assertThat(result.expiryDate()).isEqualTo(LocalDate.of(2028, 1, 10));
         assertThat(result.quantity()).isEqualByComparingTo("12.500");
@@ -68,7 +68,5 @@ class MedicineMapperTest {
         assertThat(result.activeIngredient()).isEqualTo("Ivermectina");
         assertThat(result.therapeuticCategory()).isEqualTo("Antiparasitário");
 
-        batch.setSupplierId(null);
-        assertThat(mapper.toListItemOut(batch, BigDecimal.ZERO).supplier()).isNull();
     }
 }

@@ -68,10 +68,11 @@ public class MedicineService {
                         .cnpj(input.supplierCnpj().trim())
                         .active(true)
                         .build()));
+        medicine.setSupplierId(supplier);
+        medicineRepository.save(medicine);
 
         var batch = medicineBatchRepository.save(MedicineBatch.builder()
                 .medicineId(medicine)
-                .supplierId(supplier)
                 .batchNumber(input.batchNumber().trim())
                 .manufactureDate(input.manufactureDate())
                 .expiryDate(input.expiryDate())

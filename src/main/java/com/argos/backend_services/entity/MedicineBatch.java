@@ -25,10 +25,6 @@ public class MedicineBatch {
     @JoinColumn(name = "medicine_id", nullable = false)
     private Medicine medicineId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supplier_id")
-    private Supplier supplierId;
-
     @Column(name = "batch_number", length = 30, nullable = false)
     private String batchNumber;
 

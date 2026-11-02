@@ -43,6 +43,8 @@ public interface MedicineControllerApi {
     })
     ResponseEntity<MedicineCreatedOut> create(
             @Valid @RequestBody MedicineBatchIn input,
+            @Parameter(description = "Propriedade selecionada para entrada no estoque", schema = @Schema(format = "uuid"))
+            @RequestParam(required = false) UUID propertyId,
             @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser);
 
     @GetMapping

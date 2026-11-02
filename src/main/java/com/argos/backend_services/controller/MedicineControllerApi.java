@@ -57,6 +57,8 @@ public interface MedicineControllerApi {
     ResponseEntity<PageOut<MedicineListItemOut>> list(
             @Parameter(description = "Identificador opcional da categoria terapêutica", schema = @Schema(format = "uuid"))
             @RequestParam(required = false) UUID therapeuticCategoryId,
+            @Parameter(description = "Propriedade selecionada", schema = @Schema(format = "uuid"))
+            @RequestParam(required = false) UUID propertyId,
             @Parameter(description = "Página baseada em zero", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Quantidade de itens por página, entre 1 e 100", example = "20")

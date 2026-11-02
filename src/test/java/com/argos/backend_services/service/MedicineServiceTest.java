@@ -49,6 +49,7 @@ class MedicineServiceTest {
     private DatabaseRoutineRepository databaseRoutineRepository;
     private MedicineMapper medicineMapper;
     private MedicineService service;
+    private PropertyAccessService propertyAccessService;
     private final Clock clock = Clock.fixed(Instant.parse("2026-10-11T12:00:00Z"), ZoneOffset.UTC);
 
     @BeforeEach
@@ -60,8 +61,9 @@ class MedicineServiceTest {
         userRepository = mock(UserRepository.class);
         databaseRoutineRepository = mock(DatabaseRoutineRepository.class);
         medicineMapper = mock(MedicineMapper.class);
+        propertyAccessService = mock(PropertyAccessService.class);
         service = new MedicineService(medicineRepository, medicineBatchRepository, supplierRepository,
-                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock);
+                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock, propertyAccessService);
     }
 
     @Test
@@ -168,7 +170,7 @@ class MedicineServiceTest {
 
         medicineMapper = Mappers.getMapper(MedicineMapper.class);
         service = new MedicineService(medicineRepository, medicineBatchRepository, supplierRepository,
-                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock);
+                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock, propertyAccessService);
         when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
         when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
@@ -183,9 +185,11 @@ class MedicineServiceTest {
         when(databaseRoutineRepository.balanceMedicineBatch(batchId)).thenReturn(new BigDecimal("450.000"));
 
         service.registerBatch(input, user.getId());
-        when(medicineBatchRepository.findByStatus(eq(MedicineBatch.Status.DISPONIVEL), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(savedBatch[0])));
 
+        var propertyId = UUID.randomUUID();
+        when(propertyAccessService.activePropertyIds(user.getId())).thenReturn(List.of(propertyId));
+        when(medicineBatchRepository.findAppliedInProperties(eq(List.of(propertyId)), eq(MedicineBatch.Status.DISPONIVEL), eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(savedBatch[0])));
         var listed = service.list(null, 0, 20, user.getId()).data().getFirst();
 
         assertThat(listed.medicineBatchId()).isEqualTo(batchId);
@@ -260,6 +264,46 @@ class MedicineServiceTest {
         assertThatThrownBy(() -> service.listCatalog(-1, 20)).isInstanceOf(BadRequestException.class);
         assertThatThrownBy(() -> service.listCatalog(0, 101)).isInstanceOf(BadRequestException.class);
         verifyNoInteractions(medicineRepository, medicineMapper);
+    }
+
+    @Test
+    void shouldRestrictMedicineListToAuthorizedProperty() {
+        UUID userId = UUID.randomUUID();
+        UUID propertyId = UUID.randomUUID();
+        UUID categoryId = UUID.randomUUID();
+        when(medicineBatchRepository.findAppliedInProperties(
+                eq(List.of(propertyId)), eq(MedicineBatch.Status.DISPONIVEL), eq(categoryId), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(propertyAccessService.activePropertyIds(userId)).thenReturn(List.of(propertyId));
+        service.list(categoryId, 0, 20, userId);
+        verify(propertyAccessService).activePropertyIds(userId);
+        verify(medicineBatchRepository).findAppliedInProperties(
+                eq(List.of(propertyId)), eq(MedicineBatch.Status.DISPONIVEL), eq(categoryId), any(Pageable.class));
+    }
+
+    @Test
+    void shouldRejectMedicineListWhenUserHasNoActiveProperty() {
+        UUID userId = UUID.randomUUID();
+        when(propertyAccessService.activePropertyIds(userId)).thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.list(null, 0, 20, userId))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        verifyNoInteractions(medicineBatchRepository);
+    }
+
+    @Test
+    void shouldListFromAllActiveUserPropertiesWithoutDuplicates() {
+        UUID userId = UUID.randomUUID();
+        var properties = List.of(UUID.randomUUID(), UUID.randomUUID());
+        when(propertyAccessService.activePropertyIds(userId)).thenReturn(properties);
+        when(medicineBatchRepository.findAppliedInProperties(
+                eq(properties), eq(MedicineBatch.Status.DISPONIVEL), eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        service.list(null, 0, 20, userId);
+
+        verify(medicineBatchRepository).findAppliedInProperties(
+                eq(properties), eq(MedicineBatch.Status.DISPONIVEL), eq(null), any(Pageable.class));
     }
 
     private MedicineBatchIn validInput() {

@@ -78,7 +78,7 @@ class MedicineControllerTest {
                 java.time.LocalDate.of(2026, 1, 10), java.time.LocalDate.of(2027, 1, 10),
                 java.math.BigDecimal.TEN, "Fornecedor", "12345678000199");
         var batchId = UUID.randomUUID();
-        when(medicineService.registerBatch(input, USER_ID)).thenReturn(new MedicineCreatedOut(batchId));
+        when(medicineService.registerBatch(input, USER_ID, null)).thenReturn(new MedicineCreatedOut(batchId));
 
         mockMvc.perform(post("/medicines").with(authentication(userAuthentication()))
                         .contentType("application/json")
@@ -90,7 +90,7 @@ class MedicineControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.medicineBatchId").value(batchId.toString()));
 
-        verify(medicineService).registerBatch(input, USER_ID);
+        verify(medicineService).registerBatch(input, USER_ID, null);
     }
 
     @Test
@@ -99,7 +99,7 @@ class MedicineControllerTest {
                 java.time.LocalDate.of(2026, 1, 10), java.time.LocalDate.of(2028, 1, 10),
                 java.math.BigDecimal.valueOf(12.5), java.math.BigDecimal.valueOf(1.5), "ml", 28,
                 "LOTE-2026-001", "Ivermectina", "Antiparasitário");
-        when(medicineService.list(null, 0, 20, USER_ID))
+        when(medicineService.list(null, 0, 20, USER_ID, null))
                 .thenReturn(new PageOut<>(List.of(item), 0, 20, 1, 1, true, true));
 
         mockMvc.perform(get("/medicines").with(authentication(userAuthentication())))

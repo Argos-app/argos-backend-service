@@ -20,15 +20,12 @@ import com.argos.backend_services.repository.SupplierRepository;
 import com.argos.backend_services.repository.UserRepository;
 import com.argos.backend_services.utils.PageableUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -94,25 +91,20 @@ public class MedicineService {
     }
 
     @Transactional(readOnly = true)
-    public PageOut<MedicineListItemOut> list(UUID therapeuticCategoryId, int page, int size, UUID userId, UUID propertyId) {
+    public PageOut<MedicineListItemOut> list(UUID therapeuticCategoryId, int page, int size, UUID userId) {
         var pageable = PageableUtils.createPageRequest(page, size,
                 Sort.by(Sort.Order.asc("expiryDate"), Sort.Order.asc("medicineId.brandName"),
                         Sort.Order.asc("batchNumber")));
 
-        UUID selectedPropertyId = propertyId;
-        if (selectedPropertyId == null) {
-            var propertyIds = propertyAccessService.activePropertyIds(userId);
-            if (propertyIds.isEmpty()) {
-                throw new org.springframework.security.access.AccessDeniedException("Usuário sem propriedade ativa");
-            }
-            if (propertyIds.size() != 1) {
-                throw new BadRequestException("Informe propertyId para selecionar a propriedade");
-            }
-            selectedPropertyId = propertyIds.getFirst();
+        // O escopo vem exclusivamente das propriedades ativas vinculadas ao usuário autenticado.
+        var propertyIds = propertyAccessService.activePropertyIds(userId);
+        if (propertyIds.isEmpty()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Usuário não possui acesso a nenhuma propriedade ativa");
         }
-        propertyAccessService.requireActiveAccess(userId, selectedPropertyId);
-        var result = medicineBatchRepository.findAppliedInProperty(
-                selectedPropertyId, MedicineBatch.Status.DISPONIVEL, therapeuticCategoryId, pageable);
+
+        var result = medicineBatchRepository.findAppliedInProperties(
+                propertyIds, MedicineBatch.Status.DISPONIVEL, therapeuticCategoryId, pageable);
         var data = result.getContent().stream()
                 .map(batch -> medicineMapper.toListItemOut(
                         batch,
@@ -155,12 +147,4 @@ public class MedicineService {
         }
     }
 
-    private Page<MedicineBatch> filterByTherapeuticCategory(
-            UUID therapeuticCategoryId, Pageable pageable) {
-
-        return therapeuticCategoryId == null
-                ? medicineBatchRepository.findByStatus(MedicineBatch.Status.DISPONIVEL, pageable)
-                : medicineBatchRepository.findByStatusAndMedicineId_TherapeuticCategoryId(
-                MedicineBatch.Status.DISPONIVEL, therapeuticCategoryId, pageable);
-    }
 }

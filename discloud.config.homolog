@@ -4,7 +4,7 @@ NAME=argos-backend-service-homolog
 TYPE=site
 ID=argos-backend-hmg
 MAIN=app.jar
-START=java -Dspring.profiles.active=prod -jar app.jar
+START=java -Dspring.profiles.active=dev -jar app.jar
 RAM=1024
 VERSION=latest
 AVATAR=https://i.ibb.co/M3DMc7W/Uma51.png

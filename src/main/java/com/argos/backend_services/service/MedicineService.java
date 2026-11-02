@@ -2,6 +2,7 @@ package com.argos.backend_services.service;
 
 import com.argos.backend_services.dto.in.MedicineBatchIn;
 import com.argos.backend_services.dto.out.MedicineCreatedOut;
+import com.argos.backend_services.dto.out.MedicineCatalogItemOut;
 import com.argos.backend_services.dto.out.MedicineListItemOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.entity.Medicine;
@@ -17,7 +18,6 @@ import com.argos.backend_services.repository.MedicineRepository;
 import com.argos.backend_services.repository.StockMovementRepository;
 import com.argos.backend_services.repository.SupplierRepository;
 import com.argos.backend_services.repository.UserRepository;
-import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.utils.PageableUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -40,7 +40,6 @@ public class MedicineService {
     private final SupplierRepository supplierRepository;
     private final StockMovementRepository stockMovementRepository;
     private final UserRepository userRepository;
-    private final PropertyAccessService propertyAccessService;
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final MedicineMapper medicineMapper;
     private final Clock clock;
@@ -100,6 +99,23 @@ public class MedicineService {
 
         return new PageOut<>(
                 data,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.isFirst(),
+                result.isLast());
+    }
+
+    @Transactional(readOnly = true)
+    public PageOut<MedicineCatalogItemOut> listCatalog(int page, int size) {
+        var pageable = PageableUtils.createPageRequest(page, size,
+                Sort.by(Sort.Order.asc("brandName"), Sort.Order.asc("id")));
+        var result = medicineRepository.findByActiveTrue(pageable)
+                .map(medicineMapper::toCatalogItemOut);
+
+        return new PageOut<>(
+                result.getContent(),
                 result.getNumber(),
                 result.getSize(),
                 result.getTotalElements(),

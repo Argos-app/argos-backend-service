@@ -150,6 +150,12 @@ public class MedicineService {
     private UUID resolveProperty(UUID userId, UUID requestedPropertyId) {
         if (requestedPropertyId != null) {
             propertyAccessService.requireActiveAccess(userId, requestedPropertyId);
+            boolean active = propertyRepository.findById(requestedPropertyId)
+                    .map(property -> Boolean.TRUE.equals(property.getActive()))
+                    .orElse(false);
+            if (!active) {
+                throw new BadRequestException("Propriedade não encontrada ou inativa");
+            }
             return requestedPropertyId;
         }
         var properties = propertyAccessService.activePropertyIds(userId);
@@ -159,6 +165,13 @@ public class MedicineService {
         if (properties.size() != 1) {
             throw new BadRequestException("Informe propertyId para selecionar a propriedade");
         }
-        return properties.getFirst();
+        UUID propertyId = properties.getFirst();
+        boolean active = propertyRepository.findById(propertyId)
+                .map(property -> Boolean.TRUE.equals(property.getActive()))
+                .orElse(false);
+        if (!active) {
+            throw new BadRequestException("Propriedade não encontrada ou inativa");
+        }
+        return propertyId;
     }
 }

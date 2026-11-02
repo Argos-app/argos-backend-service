@@ -4,6 +4,7 @@ import com.argos.backend_services.controller.annotation.CurrentUser;
 import com.argos.backend_services.dto.in.LotIn;
 import com.argos.backend_services.dto.out.LotOut;
 import com.argos.backend_services.exception.LotNotFoundException;
+import com.argos.backend_services.exception.PropertyNotFoundException;
 import com.argos.backend_services.security.CurrentUserData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,14 +34,17 @@ public interface LotControllerApi {
     ResponseEntity<List<LotOut>> listLot(@CurrentUser CurrentUserData currentUser);
 
     @PostMapping
-    @Operation(summary = "Cadastra lote", description = "Busca o rebanho pelo nome antes de cadastrar.")
+    @Operation(summary = "Cadastra lote", description = "Usa herdId para selecionar um rebanho ativo. Sem herdId, cria um rebanho com herdName e breed na propriedade do contexto autenticado ou na única propriedade ativa acessível. A contagem do rebanho é calculada pelos lotes ativos.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lote cadastrado"),
-            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos", content = @Content(examples = @ExampleObject(value = "{\"message\":\"herdName não pode ser vazio\"}"))),
-            @ApiResponse(responseCode = "422", description = "Rebanho não encontrado ou regra de negócio inválida", content = @Content(examples = @ExampleObject(value = "{\"message\":\"Herd not found\"}")))
+            @ApiResponse(responseCode = "400", description = "Dados inválidos ou propriedade ambígua"),
+            @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem acesso à propriedade"),
+            @ApiResponse(responseCode = "404", description = "Rebanho ou propriedade não encontrado"),
+            @ApiResponse(responseCode = "409", description = "Nome de rebanho já cadastrado na propriedade")
     })
     ResponseEntity<Void> registerLot(@Valid @RequestBody LotIn lotIn,
-                                     @CurrentUser CurrentUserData currentUser) throws LotNotFoundException;
+                                     @CurrentUser CurrentUserData currentUser) throws LotNotFoundException, PropertyNotFoundException;
 
     @DeleteMapping("/{lotId}")
     @Operation(summary = "Exclui lote", description = "Executa exclusão lógica.")

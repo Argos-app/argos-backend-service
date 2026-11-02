@@ -17,6 +17,9 @@ import java.util.UUID;
 public interface AnimalExceptionRepository extends JpaRepository<AnimalException, UUID> {
     List<AnimalException> findByLotId(Lot lotId);
 
+    @EntityGraph(attributePaths = {"lotId", "originLotId"})
+    List<AnimalException> findByLotIdIn(List<Lot> lots);
+
     @EntityGraph(attributePaths = {
             "lotId", "lotId.herdId", "lotId.herdId.propertyId",
             "originLotId", "originLotId.herdId", "originLotId.herdId.propertyId"

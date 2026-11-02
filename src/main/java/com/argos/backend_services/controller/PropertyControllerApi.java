@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RequestMapping("/properties")
-@Tag(name = "Properties", description = "Rotas de gestão de propriedades")
+@Tag(name = "Propriedades", description = "Rotas de gestão de propriedades")
 public interface PropertyControllerApi {
 
     @GetMapping

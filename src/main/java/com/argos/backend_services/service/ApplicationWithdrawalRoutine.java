@@ -11,10 +11,19 @@ import org.springframework.stereotype.Component;
 public class ApplicationWithdrawalRoutine {
 
     private final ApplicationWithdrawalService withdrawalService;
+    private final WithdrawalNotificationService notificationService;
 
     @Scheduled(cron = "${argos.routines.withdrawal.cron:0 0 8 * * *}", zone = "${argos.routines.time-zone:America/Sao_Paulo}")
     public void notifyWithdrawalsDueToday() {
         var dueApplications = withdrawalService.findDueToday();
-        log.info("Found {} application withdrawal notifications for today", dueApplications.size());
+        notificationService.prepare(dueApplications);
+        notificationService.sendPending();
+        log.info("withdrawal_notification_routine applications={}", dueApplications.size());
+    }
+
+    @Scheduled(cron = "${argos.routines.withdrawal.retry-cron:0 */15 * * * *}",
+            zone = "${argos.routines.time-zone:America/Sao_Paulo}")
+    public void retryPendingNotifications() {
+        notificationService.sendPending();
     }
 }

@@ -5,13 +5,16 @@ import com.argos.backend_services.exception.ArgosBadRequestException;
 import com.argos.backend_services.exception.ArgosInternalServerException;
 import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.exception.UnauthorizedException;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.TransactionTimedOutException;
 
 @RestControllerAdvice
 public class CustomGlobalException {
@@ -36,13 +39,14 @@ public class CustomGlobalException {
     @ExceptionHandler(ArgosInternalServerException.class)
     ResponseEntity<ApiError> handleArgosInternalServerException(ArgosInternalServerException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(new ApiError(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.toString(), "ARGOS_INTERNAL_SERVER_ERROR"));
     }
 
     @ExceptionHandler(NotFoundException.class)
     ResponseEntity<ApiError> handleNotFoundException(NotFoundException ex) {
         var error = new ApiError(ex.getMessage(), HttpStatus.NOT_FOUND.toString(), "NOT_FOUND");
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON).body(error);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -78,6 +82,13 @@ public class CustomGlobalException {
     @ExceptionHandler(AccessDeniedException.class)
     ResponseEntity<ApiError> handleAccessDeniedException(AccessDeniedException ex) {
         var error = new ApiError(ex.getMessage(), HttpStatus.FORBIDDEN.toString(), "FORBIDDEN");
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON).body(error);
+    }
+
+    @ExceptionHandler({TransactionTimedOutException.class, TransientDataAccessException.class})
+    ResponseEntity<ApiError> handleTemporaryPersistenceFailure(RuntimeException ex) {
+        var error = new ApiError("Serviço temporariamente indisponível; tente novamente",
+                HttpStatus.SERVICE_UNAVAILABLE.toString(), "SERVICE_UNAVAILABLE");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
     }
 }

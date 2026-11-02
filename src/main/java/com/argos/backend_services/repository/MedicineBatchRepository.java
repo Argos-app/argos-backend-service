@@ -21,13 +21,39 @@ public interface MedicineBatchRepository extends JpaRepository<MedicineBatch, UU
 
     boolean existsByMedicineIdAndBatchNumber(Medicine medicine, String batchNumber);
 
-    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "supplierId"})
+    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "medicineId.supplierId"})
     Page<MedicineBatch> findByStatus(MedicineBatch.Status status, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "supplierId"})
+    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "medicineId.supplierId"})
     Page<MedicineBatch> findByStatusAndMedicineId_TherapeuticCategoryId(
             MedicineBatch.Status status,
             UUID therapeuticCategoryId,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = {"medicineId", "medicineId.therapeuticCategoryId", "medicineId.supplierId"})
+    @Query(value = """
+            select mb from MedicineBatch mb
+            where mb.status = :status
+              and (:categoryId is null or mb.medicineId.therapeuticCategoryId.id = :categoryId)
+              and exists (
+                  select a.id from Application a
+                  where a.medicineBatchId = mb
+                    and a.lotId.herdId.propertyId.id in :propertyIds
+              )
+            """, countQuery = """
+            select count(mb) from MedicineBatch mb
+            where mb.status = :status
+              and (:categoryId is null or mb.medicineId.therapeuticCategoryId.id = :categoryId)
+              and exists (
+                  select a.id from Application a
+                  where a.medicineBatchId = mb
+                    and a.lotId.herdId.propertyId.id in :propertyIds
+              )
+            """)
+    Page<MedicineBatch> findAppliedInProperties(
+            @Param("propertyIds") Collection<UUID> propertyIds,
+            @Param("status") MedicineBatch.Status status,
+            @Param("categoryId") UUID categoryId,
             Pageable pageable);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

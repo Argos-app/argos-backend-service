@@ -6,6 +6,8 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.AuthErrorCode;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.Message;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import java.util.Date;
@@ -15,12 +17,13 @@ import java.nio.charset.StandardCharsets;
 public class FirebaseRuntimeProbe {
     public static void verifyCertificateFetch() throws Exception {
         long now = System.currentTimeMillis() / 1000;
+        var response = new MockLowLevelHttpResponse().setStatusCode(200).setContent("{}")
+                .setContentType("application/json");
         var transport = new MockHttpTransport.Builder().setLowLevelHttpResponse(
-            new MockLowLevelHttpResponse().setStatusCode(200).setContent("{}")
-            .setContentType("application/json")).build();
+                response).build();
         var app = FirebaseApp.initializeApp(FirebaseOptions.builder()
             .setProjectId("diagnostic-project").setHttpTransport(transport)
-            .setCredentials(GoogleCredentials.create(new AccessToken("unused", new Date())))
+            .setCredentials(GoogleCredentials.create(new AccessToken("unused", new Date((now + 3600) * 1000))))
             .build(), "runtime-smoke");
         String header = "{\"alg\":\"RS256\",\"kid\":\"diagnostic-key\"}";
         String payload = "{\"aud\":\"diagnostic-project\",\"iss\":\"https://securetoken.google.com/diagnostic-project\",\"sub\":\"diagnostic-user\",\"iat\":" + now + ",\"exp\":" + (now + 3600) + "}";
@@ -37,6 +40,11 @@ public class FirebaseRuntimeProbe {
                 if (transport.getLowLevelHttpRequest() == null) throw new AssertionError("HTTP path not reached");
                 
             }
+            String expectedMessageId = "projects/diagnostic-project/messages/mock-message";
+            response.setContent("{\"name\":\"" + expectedMessageId + "\"}");
+            String messageId = FirebaseMessaging.getInstance(app)
+                    .send(Message.builder().setToken("diagnostic-token").build());
+            if (!expectedMessageId.equals(messageId)) throw new AssertionError("FCM send did not return the mocked message ID");
         } finally { app.delete(); }
     }
 }

@@ -9,6 +9,7 @@ import com.argos.backend_services.dto.out.AdminUserOptionOut;
 import com.argos.backend_services.dto.out.CreateUserOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.out.UserAccessOut;
+import com.argos.backend_services.dto.out.UserAiUsageOut;
 import com.argos.backend_services.dto.out.UserCreationOptionsOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.dto.out.UserOptionOut;
@@ -30,8 +31,24 @@ import java.util.List;
 import java.util.UUID;
 
 @RequestMapping("/users")
-@Tag(name = "Users", description = "Rotas de gestão de usuários e seus acessos")
+@Tag(name = "Usuários", description = "Rotas de gestão de usuários e seus acessos")
 public interface UserControllerApi {
+
+    @GetMapping("/ai-usage")
+    @Operation(summary = "Lista o uso acumulado de IA por usuário",
+            description = "Pagina usuários únicos com vínculo ativo em fazenda ativa do administrador autenticado. "
+                    + "Inclui usuários sem consumo com métricas zeradas. O consumo é global por usuário, sem rateio por fazenda.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Uso acumulado dos usuários"),
+            @ApiResponse(responseCode = "400", description = "Parâmetros de paginação inválidos"),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente/inválida ou conta/permissão inativa"),
+            @ApiResponse(responseCode = "403", description = "Acesso permitido somente a administradores"),
+            @ApiResponse(responseCode = "500", description = "Falha na leitura ou dados inválidos de consumo no Redis")
+    })
+    ResponseEntity<PageOut<UserAiUsageOut>> listAiUsage(
+            @Parameter(description = "Índice da página, começando em zero") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Quantidade por página, entre 1 e 100") @RequestParam(defaultValue = "10") int size,
+            @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser);
 
     @GetMapping("/me")
     @Operation(summary = "Consulta o perfil do usuário autenticado",
@@ -156,13 +173,15 @@ public interface UserControllerApi {
     ResponseEntity<Void> deleteUser(@Parameter(description = "Identificador do usuário") @PathVariable String userId,
             @Parameter(hidden = true) @CurrentUser CurrentUserData currentUser);
 
-    @PatchMapping("/update-perfil")
+    @PatchMapping({"/update-profile"})
     @Operation(summary = "Atualiza o perfil do usuário autenticado",
-            description = "Atualiza nome, e-mail e/ou URL da foto. Os campos não enviados são preservados.")
+            description = "Atualiza nome, e-mail, URL da foto e/ou endereço. Os campos não enviados são preservados.")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Perfil atualizado"),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos, vazios ou duplicados"),
-            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+            @ApiResponse(responseCode = "400", description = "Dados inválidos, vazios, duplicados ou múltiplas propriedades ativas vinculadas"),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida"),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para alterar o endereço da propriedade"),
+            @ApiResponse(responseCode = "404", description = "Usuário ou propriedade ativa vinculada não encontrado")
     })
     ResponseEntity<Void> updateCurrentUser(
             @Valid @RequestBody UpdateCurrentUserIn data,

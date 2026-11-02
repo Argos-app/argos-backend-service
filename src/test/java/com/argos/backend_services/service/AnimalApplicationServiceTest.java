@@ -40,8 +40,8 @@ class AnimalApplicationServiceTest {
                 .herdId(Herd.builder().propertyId(Property.builder().id(propertyId).build()).build())
                 .build();
         var animalException = AnimalException.builder().id(animalExceptionId).originLotId(originLot)
-                .status(AnimalException.StatusAnimal.ATIVO).build();
-        var input = new AnimalApplicationIn(medicineBatch.getId(), new BigDecimal("5"), "ml", "ORAL", "Tratamento");
+                .earTag("BR-0001").status(AnimalException.StatusAnimal.ATIVO).build();
+        var input = new AnimalApplicationIn("BR-0001", medicineBatch.getId(), new BigDecimal("5"), "ml", "ORAL", "Tratamento");
 
         when(exceptionRepository.findWithLotsById(animalExceptionId)).thenReturn(Optional.of(animalException));
         when(medicineBatchRepository.findById(medicineBatch.getId())).thenReturn(Optional.of(medicineBatch));

@@ -11,6 +11,7 @@ import java.time.LocalDate;
 public interface ApplicationWithdrawalMapper {
 
     @Mapping(source = "application.id", target = "applicationId")
+    @Mapping(source = "application.lotId.id", target = "lotId")
     @Mapping(source = "application.userId.id", target = "userId")
     @Mapping(source = "application.lotId.lotCode", target = "lotName")
     @Mapping(source = "application.medicineBatchId.medicineId.brandName", target = "medicineName")

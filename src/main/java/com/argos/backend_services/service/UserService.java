@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -122,23 +123,55 @@ public class UserService {
 
         AppUser user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+        Property property = null;
+        if (data.address() != null) {
+            if (data.address().trim().isBlank()) {
+                throw new BadRequestException("Endereço não pode ser enviado vazio");
+            }
+            property = findProfileProperty(user);
+        }
+
+        boolean hasProfileChanges = data.name() != null || data.email() != null || data.photoUrl() != null;
         String previousEmail = user.getEmail();
         String name = data.name() == null ? user.getName() : data.name().trim();
         String email = data.email() == null ? user.getEmail() : data.email().trim().toLowerCase(Locale.ROOT);
         String photoUrl = data.photoUrl() == null ? user.getPhotoUrl() : data.photoUrl().trim();
 
-        if (name.isBlank() || email.isBlank()) {
-            throw new BadRequestException("Nome e email não podem ficar vazios");
-        }
-        if (userRepository.existsByEmailAndIdNot(email, userId)) {
-            throw new BadRequestException("Email já cadastrado");
+        if (hasProfileChanges) {
+            if (name.isBlank() || email.isBlank()) {
+                throw new BadRequestException("Nome e email não podem ficar vazios");
+            }
+            if (userRepository.existsByEmailAndIdNot(email, userId)) {
+                throw new BadRequestException("Email já cadastrado");
+            }
+
+            user.setName(name);
+            user.setEmail(email);
+            user.setPhotoUrl(photoUrl);
+            userRepository.save(user);
         }
 
-        user.setName(name);
-        user.setEmail(email);
-        user.setPhotoUrl(photoUrl);
-        userRepository.save(user);
-        synchronizeFirebaseProfile(user, name, email, previousEmail, photoUrl);
+        if (property != null) {
+            property.setAddress(data.address().trim());
+            propertyRepository.save(property);
+        }
+        if (hasProfileChanges) {
+            synchronizeFirebaseProfile(user, name, email, previousEmail, photoUrl);
+        }
+    }
+
+    private Property findProfileProperty(AppUser user) {
+        Property property = propertyRepository.findActiveLinkedProperties(user.getId(), PageRequest.of(0, 1))
+                .stream().findFirst()
+                .orElseThrow(() -> new NotFoundException("Propriedade ativa vinculada não encontrada"));
+        Permission permission = user.getPermission();
+
+        if (!Boolean.TRUE.equals(user.getActive()) || permission == null
+                || !Boolean.TRUE.equals(permission.getActive()) || !"ADMIN".equals(permission.getCode())) {
+            throw new AccessDeniedException("Somente um administrador pode alterar o endereço da propriedade");
+        }
+
+        return property;
     }
 
     @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)

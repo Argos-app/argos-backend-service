@@ -14,9 +14,11 @@ import java.time.LocalDate;
 public interface ApplicationRepository extends JpaRepository<Application, UUID> {
 
     List<Application> findByLotId(Lot lotId);
+    List<Application> findByLotIdIn(List<Lot> lots);
     List<Application> findByLotId_LotCode(String lotCode);
     List<Application> findByUserId(AppUser userId);
 
+    @EntityGraph(attributePaths = {"userId", "lotId", "medicineBatchId", "medicineBatchId.medicineId"})
     List<Application> findByMeatWithdrawalEndBetween(LocalDate startDate, LocalDate endDate);
 
     @EntityGraph(attributePaths = {"userId", "lotId", "lotId.herdId", "lotId.herdId.propertyId", "medicineBatchId", "medicineBatchId.medicineId"})

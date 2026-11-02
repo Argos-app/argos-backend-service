@@ -102,3 +102,4 @@ Thumbs.db
 
 application-local.properties
 **/firebase-service-account.json
+specs/

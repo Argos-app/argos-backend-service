@@ -8,6 +8,8 @@ import java.util.UUID;
 
 @Builder
 public record ApplicationIn(
+        UUID medicineBatchId,
+        UUID lotId,
         String lotName,
         String medicineName,
         LocalDate applicationDate,

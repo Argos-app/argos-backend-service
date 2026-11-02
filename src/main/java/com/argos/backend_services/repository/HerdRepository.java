@@ -10,7 +10,13 @@ import java.util.UUID;
 import java.util.Optional;
 
 public interface HerdRepository extends JpaRepository<Herd, UUID> {
+    @EntityGraph(attributePaths = "propertyId")
+    Optional<Herd> findWithPropertyByIdAndActiveTrue(UUID id);
+
+    boolean existsByPropertyId_IdAndHerdName(UUID propertyId, String herdName);
+
     List<Herd> findByPropertyId(Property propertyId);
+    List<Herd> findByPropertyIdAndActiveTrue(Property propertyId);
     Optional<Herd> findByHerdNameAndActiveTrue(String herdName);
 
     @EntityGraph(attributePaths = "propertyId")

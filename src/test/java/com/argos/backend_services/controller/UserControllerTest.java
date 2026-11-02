@@ -16,6 +16,7 @@ import com.argos.backend_services.security.CurrentUserData;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import com.argos.backend_services.exception.BadRequestException;
 import com.argos.backend_services.service.JwtService;
+import com.argos.backend_services.service.UserAiUsageService;
 import com.argos.backend_services.service.UserService;
 import com.argos.backend_services.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -78,6 +79,9 @@ public class UserControllerTest {
     @MockBean
     private UserService userService;
 
+    @MockBean
+    private UserAiUsageService userAiUsageService;
+
     @Autowired
     private JwtService jwtService;
 
@@ -120,15 +124,79 @@ public class UserControllerTest {
 
     @Test
     void shouldAllowAuthenticatedUserToUpdateOnlyProvidedProfileFields() throws Exception {
-        UpdateCurrentUserIn input = new UpdateCurrentUserIn("Updated User", null, null);
+        UpdateCurrentUserIn input = new UpdateCurrentUserIn("Updated User", null, null, null);
 
-        mockMvc.perform(patch("/users/update-perfil")
+        mockMvc.perform(patch("/users/update-profile")
                         .with(authentication(userAuthentication()))
                         .contentType("application/json")
                         .content("{\"name\":\"Updated User\"}"))
                 .andExpect(status().isNoContent());
 
         verify(userService).updateCurrentUser(org.mockito.ArgumentMatchers.any(UUID.class), org.mockito.ArgumentMatchers.eq(input));
+    }
+
+    @Test
+    void shouldAcceptAddressOnlyForAuthenticatedUser() throws Exception {
+        UpdateCurrentUserIn input = new UpdateCurrentUserIn(null, null, null, "a".repeat(255));
+
+        mockMvc.perform(patch("/users/update-profile")
+                        .with(authentication(administratorAuthentication()))
+                        .contentType("application/json")
+                        .content("{\"address\":\"" + input.address() + "\"}"))
+                .andExpect(status().isNoContent());
+
+        verify(userService).updateCurrentUser(ADMINISTRATOR_ID, input);
+    }
+
+    @Test
+    void shouldAcceptAddressWithPersonalFields() throws Exception {
+        var input = new UpdateCurrentUserIn("Updated User", "updated@argos.com", "https://example.com/photo.png", "Test Street");
+
+        mockMvc.perform(patch("/users/update-profile")
+                        .with(authentication(administratorAuthentication()))
+                        .contentType("application/json")
+                        .content("""
+                                {"name":"Updated User","email":"updated@argos.com",
+                                 "photoUrl":"https://example.com/photo.png","address":"Test Street"}
+                                """))
+                .andExpect(status().isNoContent());
+
+        verify(userService).updateCurrentUser(ADMINISTRATOR_ID, input);
+    }
+
+    @Test
+    void shouldRejectAddressOverColumnLimitBeforeCallingService() throws Exception {
+        mockMvc.perform(patch("/users/update-profile")
+                        .with(authentication(administratorAuthentication()))
+                        .contentType("application/json")
+                        .content("{\"address\":\"" + "a".repeat(256) + "\"}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldRejectUnauthenticatedAddressUpdate() throws Exception {
+        mockMvc.perform(patch("/users/update-profile")
+                        .contentType("application/json")
+                        .content("{\"address\":\"Test Street\"}"))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenServiceRejectsAddressPermission() throws Exception {
+        var input = new UpdateCurrentUserIn(null, null, null, "Test Street");
+        org.mockito.Mockito.doThrow(new org.springframework.security.access.AccessDeniedException("Sem permissão"))
+                .when(userService).updateCurrentUser(ADMINISTRATOR_ID, input);
+
+        mockMvc.perform(patch("/users/update-profile")
+                        .with(authentication(administratorAuthentication()))
+                        .contentType("application/json")
+                        .content("{\"address\":\"Test Street\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.informationCode").value("FORBIDDEN"));
     }
 
     @Test

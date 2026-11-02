@@ -19,10 +19,12 @@ public interface MedicineMapper {
 
     @Mapping(target = "medicineBatchId", source = "batch.id")
     @Mapping(target = "medicineName", source = "batch.medicineId.brandName")
+    @Mapping(target = "supplier", source = "batch.supplierId.companyName")
     @Mapping(target = "manufactureDate", source = "batch.manufactureDate")
     @Mapping(target = "expiryDate", source = "batch.expiryDate")
     @Mapping(target = "quantity", source = "quantity")
     @Mapping(target = "dose", source = "batch.medicineId.dose")
+    @Mapping(target = "doseUnit", source = "batch.medicineId.unit")
     @Mapping(target = "withdrawalDays", source = "batch.medicineId.meatWithdrawalDays")
     @Mapping(target = "batch", source = "batch.batchNumber")
     @Mapping(target = "activeIngredient", source = "batch.medicineId.activeIngredient")

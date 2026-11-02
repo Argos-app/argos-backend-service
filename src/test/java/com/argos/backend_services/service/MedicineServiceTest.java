@@ -16,6 +16,7 @@ import com.argos.backend_services.repository.StockMovementRepository;
 import com.argos.backend_services.repository.SupplierRepository;
 import com.argos.backend_services.repository.UserRepository;
 import com.argos.backend_services.repository.PropertyRepository;
+import org.mapstruct.factory.Mappers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -96,6 +97,105 @@ class MedicineServiceTest {
                         && movement.getType() == 'E'
                         && movement.getQuantity().compareTo(input.quantity()) == 0
                         && "ENTRADA_LOTE".equals(movement.getReason())));
+    }
+
+    @Test
+    void registerBatchAssociatesSupplierWithBatch() {
+        var medicine = Medicine.builder().id(UUID.randomUUID()).active(true).needsPrescription(false).build();
+        var user = AppUser.builder().id(UUID.randomUUID()).active(true).build();
+        var supplier = Supplier.builder().id(UUID.randomUUID()).companyName("Novo Fornecedor")
+                .cnpj("12345678000199").active(true).build();
+        var input = new MedicineBatchIn("12345", "LOTE-002", LocalDate.of(2026, 1, 10),
+                LocalDate.of(2027, 1, 10), new BigDecimal("20.000"), "Novo Fornecedor", "12345678000199");
+
+        when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber())).thenReturn(false);
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.empty());
+        when(supplierRepository.save(any(Supplier.class))).thenReturn(supplier);
+        when(medicineBatchRepository.save(any(MedicineBatch.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.registerBatch(input, user.getId());
+
+        var supplierCaptor = ArgumentCaptor.forClass(Supplier.class);
+        verify(supplierRepository).save(supplierCaptor.capture());
+        assertThat(supplierCaptor.getValue().getCompanyName()).isEqualTo("Novo Fornecedor");
+        assertThat(supplierCaptor.getValue().getCnpj()).isEqualTo("12345678000199");
+        var batchCaptor = ArgumentCaptor.forClass(MedicineBatch.class);
+        verify(medicineBatchRepository).save(batchCaptor.capture());
+        assertThat(batchCaptor.getValue().getSupplierId()).isEqualTo(supplier);
+    }
+
+    @Test
+    void registerBatchReusesExistingSupplierWithoutChangingMedicineSupplier() {
+        var originalSupplier = Supplier.builder().id(UUID.randomUUID()).companyName("Fornecedor do catálogo")
+                .cnpj("99999999000199").active(true).build();
+        var existingSupplier = Supplier.builder().id(UUID.randomUUID()).companyName("Fornecedor do lote")
+                .cnpj("12345678000199").active(true).build();
+        var medicine = Medicine.builder().id(UUID.randomUUID()).supplierId(originalSupplier)
+                .active(true).needsPrescription(false).build();
+        var user = AppUser.builder().id(UUID.randomUUID()).active(true).build();
+        var input = validInput();
+
+        when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber())).thenReturn(false);
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.of(existingSupplier));
+        when(medicineBatchRepository.save(any(MedicineBatch.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.registerBatch(input, user.getId());
+
+        verify(supplierRepository, never()).save(any());
+        var batchCaptor = ArgumentCaptor.forClass(MedicineBatch.class);
+        verify(medicineBatchRepository).save(batchCaptor.capture());
+        assertThat(batchCaptor.getValue().getSupplierId()).isEqualTo(existingSupplier);
+        assertThat(medicine.getSupplierId()).isEqualTo(originalSupplier);
+        verify(medicineRepository, never()).save(any());
+    }
+
+    @Test
+    void registerBatchSupplierIsReturnedByStockListWithoutChangingMedicineSupplier() {
+        var catalogSupplier = Supplier.builder().id(UUID.randomUUID()).companyName("Fornecedor do catálogo")
+                .cnpj("99999999000199").active(true).build();
+        var medicine = Medicine.builder().id(UUID.randomUUID()).supplierId(catalogSupplier)
+                .brandName("Ivermectina").activeIngredient("Ivermectina").unit("ml")
+                .active(true).needsPrescription(false).build();
+        var user = AppUser.builder().id(UUID.randomUUID()).active(true).build();
+        var input = validInput();
+        var batchId = UUID.randomUUID();
+        var savedBatch = new MedicineBatch[1];
+        var lotSupplier = Supplier.builder().id(UUID.randomUUID()).companyName(input.supplierName())
+                .cnpj(input.supplierCnpj()).active(true).build();
+
+        medicineMapper = Mappers.getMapper(MedicineMapper.class);
+        service = new MedicineService(medicineRepository, medicineBatchRepository, supplierRepository,
+                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock);
+        when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber())).thenReturn(false);
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.empty());
+        when(supplierRepository.save(any(Supplier.class))).thenReturn(lotSupplier);
+        when(medicineBatchRepository.save(any(MedicineBatch.class))).thenAnswer(invocation -> {
+            var batch = invocation.getArgument(0, MedicineBatch.class);
+            batch.setId(batchId);
+            savedBatch[0] = batch;
+            return batch;
+        });
+        when(databaseRoutineRepository.balanceMedicineBatch(batchId)).thenReturn(new BigDecimal("450.000"));
+
+        service.registerBatch(input, user.getId());
+        when(medicineBatchRepository.findByStatus(eq(MedicineBatch.Status.DISPONIVEL), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(savedBatch[0])));
+
+        var listed = service.list(null, 0, 20, user.getId()).data().getFirst();
+
+        assertThat(listed.medicineBatchId()).isEqualTo(batchId);
+        assertThat(listed.supplier()).isEqualTo(input.supplierName());
+        assertThat(listed.doseUnit()).isEqualTo("ml");
+        assertThat(listed.quantity()).isEqualByComparingTo("450.000");
+        assertThat(medicine.getSupplierId()).isEqualTo(catalogSupplier);
     }
 
     @Test

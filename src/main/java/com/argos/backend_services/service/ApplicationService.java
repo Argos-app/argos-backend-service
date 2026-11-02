@@ -27,9 +27,7 @@ public class ApplicationService {
 
     public void registerApplication(ApplicationIn applicationIn, UUID userId) throws LotNotFoundException, MedicineNotFoundException {
 
-        var lot = (applicationIn.lotId() != null
-                ? lotRepository.findWithHerdAndPropertyById(applicationIn.lotId())
-                : lotRepository.findWithHerdAndPropertyByLotCode(applicationIn.lotName()))
+        var lot = lotRepository.findWithHerdAndPropertyById(applicationIn.lotId())
                 .orElseThrow(() -> new LotNotFoundException("Não foi possível achar o lote informado"));
 
         var propertyId = lot.getHerdId().getPropertyId().getId();

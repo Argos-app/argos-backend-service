@@ -23,9 +23,10 @@ public class MedicineController implements MedicineControllerApi {
     private final MedicineService medicineService;
 
     @Override
-    public ResponseEntity<MedicineCreatedOut> create(MedicineBatchIn input,
+    public ResponseEntity<MedicineCreatedOut> create(MedicineBatchIn input, UUID propertyId,
                                                       @CurrentUser CurrentUserData currentUser) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(medicineService.registerBatch(input, currentUser.id(), currentUser.propertyId()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(medicineService.registerBatch(input, currentUser.id(),
+                propertyId == null ? currentUser.propertyId() : propertyId));
     }
 
     @Override

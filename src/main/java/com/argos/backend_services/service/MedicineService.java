@@ -2,6 +2,7 @@ package com.argos.backend_services.service;
 
 import com.argos.backend_services.dto.in.MedicineBatchIn;
 import com.argos.backend_services.dto.out.MedicineCreatedOut;
+import com.argos.backend_services.dto.out.MedicineCatalogItemOut;
 import com.argos.backend_services.dto.out.MedicineListItemOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.entity.Medicine;
@@ -17,7 +18,6 @@ import com.argos.backend_services.repository.MedicineRepository;
 import com.argos.backend_services.repository.StockMovementRepository;
 import com.argos.backend_services.repository.SupplierRepository;
 import com.argos.backend_services.repository.UserRepository;
-import com.argos.backend_services.repository.PropertyRepository;
 import com.argos.backend_services.utils.PageableUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -40,7 +40,6 @@ public class MedicineService {
     private final SupplierRepository supplierRepository;
     private final StockMovementRepository stockMovementRepository;
     private final UserRepository userRepository;
-    private final PropertyAccessService propertyAccessService;
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final MedicineMapper medicineMapper;
     private final Clock clock;
@@ -62,6 +61,15 @@ public class MedicineService {
         var user = userRepository.findById(userId)
                 .filter(userCandidate -> Boolean.TRUE.equals(userCandidate.getActive()))
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado ou inativo"));
+
+        var supplier = supplierRepository.findByCnpj(input.supplierCnpj().trim())
+                .orElseGet(() -> supplierRepository.save(Supplier.builder()
+                        .companyName(input.supplierName().trim())
+                        .cnpj(input.supplierCnpj().trim())
+                        .active(true)
+                        .build()));
+        medicine.setSupplierId(supplier);
+        medicineRepository.save(medicine);
 
         var batch = medicineBatchRepository.save(MedicineBatch.builder()
                 .medicineId(medicine)
@@ -108,28 +116,21 @@ public class MedicineService {
                 result.isLast());
     }
 
-    private void findOrCreateSupplier(MedicineBatchIn input) {
-        var cnpj = input.supplierCnpj().trim();
-        if (supplierRepository.findByCnpj(cnpj).isPresent()) {
-            var supplier = supplierRepository.save(Supplier.builder()
-                    .companyName(input.supplierName().trim())
-                    .cnpj(cnpj)
-                    .active(true)
-                    .build());
+    @Transactional(readOnly = true)
+    public PageOut<MedicineCatalogItemOut> listCatalog(int page, int size) {
+        var pageable = PageableUtils.createPageRequest(page, size,
+                Sort.by(Sort.Order.asc("brandName"), Sort.Order.asc("id")));
+        var result = medicineRepository.findByActiveTrue(pageable)
+                .map(medicineMapper::toCatalogItemOut);
 
-            var medicine = medicineRepository.findByMapaRegistration(input.productRegistration());
-            medicineRepository.save(Medicine
-                    .builder()
-                    .createdAt(medicine.get().getCreatedAt())
-                    .needsPrescription(medicine.get().isNeedsPrescription())
-                    .id(medicine.get().getId())
-                    .supplierId(supplier)
-                    .activeIngredient(medicine.get().getActiveIngredient())
-                    .description(medicine.get().getDescription())
-                    .dose(medicine.get().getDose())
-                    .active(true)
-                    .build());
-        }
+        return new PageOut<>(
+                result.getContent(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.isFirst(),
+                result.isLast());
     }
 
     private void validateDates(MedicineBatchIn input, LocalDate today) {

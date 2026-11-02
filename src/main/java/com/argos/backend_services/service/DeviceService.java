@@ -48,6 +48,12 @@ public class DeviceService {
         device.setPushToken(null);
     }
 
+    @Transactional(readOnly = true)
+    public boolean isRegistered(UUID deviceId, UUID userId) {
+        var device = find(deviceId, userId);
+        return device.isActive() && device.getPushToken() != null && !device.getPushToken().isBlank();
+    }
+
     private Device findOrCreate(String pushToken, UUID userId) throws DeviceConflictException {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));

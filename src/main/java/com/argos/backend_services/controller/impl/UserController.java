@@ -10,11 +10,13 @@ import com.argos.backend_services.dto.out.AdminUserOptionOut;
 import com.argos.backend_services.dto.out.CreateUserOut;
 import com.argos.backend_services.dto.out.PageOut;
 import com.argos.backend_services.dto.out.UserAccessOut;
+import com.argos.backend_services.dto.out.UserAiUsageOut;
 import com.argos.backend_services.dto.out.UserCreationOptionsOut;
 import com.argos.backend_services.dto.out.UserListItemOut;
 import com.argos.backend_services.dto.out.UserOptionOut;
 import com.argos.backend_services.dto.out.UserProfileOut;
 import com.argos.backend_services.service.UserService;
+import com.argos.backend_services.service.UserAiUsageService;
 import com.argos.backend_services.security.CurrentUserData;
 import com.argos.backend_services.controller.annotation.CurrentUser;
 import jakarta.validation.Valid;
@@ -32,6 +34,15 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserController implements UserControllerApi {
     private final UserService userService;
+    private final UserAiUsageService userAiUsageService;
+
+    @Override
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<PageOut<UserAiUsageOut>> listAiUsage(@RequestParam(defaultValue = "0") int page,
+                                                             @RequestParam(defaultValue = "10") int size,
+                                                             @CurrentUser CurrentUserData currentUser) {
+        return ResponseEntity.ok(userAiUsageService.list(page, size, currentUser.id()));
+    }
 
     @Override
     @PreAuthorize("isAuthenticated()")

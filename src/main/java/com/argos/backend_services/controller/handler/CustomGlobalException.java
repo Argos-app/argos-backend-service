@@ -5,6 +5,7 @@ import com.argos.backend_services.exception.ArgosBadRequestException;
 import com.argos.backend_services.exception.ArgosInternalServerException;
 import com.argos.backend_services.exception.NotFoundException;
 import com.argos.backend_services.exception.UnauthorizedException;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.TransactionTimedOutException;
 
 @RestControllerAdvice
 public class CustomGlobalException {
@@ -81,5 +83,12 @@ public class CustomGlobalException {
     ResponseEntity<ApiError> handleAccessDeniedException(AccessDeniedException ex) {
         var error = new ApiError(ex.getMessage(), HttpStatus.FORBIDDEN.toString(), "FORBIDDEN");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON).body(error);
+    }
+
+    @ExceptionHandler({TransactionTimedOutException.class, TransientDataAccessException.class})
+    ResponseEntity<ApiError> handleTemporaryPersistenceFailure(RuntimeException ex) {
+        var error = new ApiError("Serviço temporariamente indisponível; tente novamente",
+                HttpStatus.SERVICE_UNAVAILABLE.toString(), "SERVICE_UNAVAILABLE");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
     }
 }

@@ -16,6 +16,7 @@ import com.argos.backend_services.security.CurrentUserData;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import com.argos.backend_services.exception.BadRequestException;
 import com.argos.backend_services.service.JwtService;
+import com.argos.backend_services.service.UserAiUsageService;
 import com.argos.backend_services.service.UserService;
 import com.argos.backend_services.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -77,6 +78,9 @@ public class UserControllerTest {
 
     @MockBean
     private UserService userService;
+
+    @MockBean
+    private UserAiUsageService userAiUsageService;
 
     @Autowired
     private JwtService jwtService;

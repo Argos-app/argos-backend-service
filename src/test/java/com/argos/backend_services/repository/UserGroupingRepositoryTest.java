@@ -125,6 +125,53 @@ class UserGroupingRepositoryTest {
         assertThat(users.findActiveProfileById(firstUser.getId())).isEmpty();
     }
 
+    @Test
+    void shouldKeepInactiveLinkedAccountsInUsageListing() {
+        em.find(AppUser.class, firstUser.getId()).setActive(false);
+        em.flush();
+        em.clear();
+
+        var result = users.findLinkedByAdministrator(administrator.getId(), PageRequest.of(0, 10));
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent()).extracting(item -> item.userId())
+                .containsExactly(firstUser.getId(), secondUser.getId());
+        assertThat(result.getContent().getFirst().active()).isFalse();
+    }
+
+    @Test
+    void shouldExcludeUsersWithOnlyInactiveLinksOrInactiveFarms() {
+        var inactiveLinkUser = user("Inactive link user");
+        var inactiveFarmUser = user("Inactive farm user");
+        var activeFarm = farm("New active", administrator, true);
+        var inactiveFarm = farm("New inactive", administrator, false);
+        em.persist(UserProperty.builder().user(inactiveLinkUser).property(activeFarm)
+                .linkDate(LocalDate.of(2026, 1, 15)).active(false).build());
+        link(inactiveFarmUser, inactiveFarm);
+        em.flush();
+        em.clear();
+
+        var result = users.findLinkedByAdministrator(administrator.getId(), PageRequest.of(0, 10));
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent()).extracting(item -> item.userId())
+                .containsExactly(firstUser.getId(), secondUser.getId());
+    }
+
+    @Test
+    void shouldUseIdToBreakNameTiesAcrossPagesWithoutAddingTheAdministrator() {
+        em.find(AppUser.class, firstUser.getId()).setName("Same name");
+        em.find(AppUser.class, secondUser.getId()).setName("Same name");
+        em.flush();
+        em.clear();
+
+        var expected = List.of(firstUser.getId(), secondUser.getId()).stream()
+                .sorted(java.util.Comparator.comparing(java.util.UUID::toString)).toList();
+        var firstPage = users.findLinkedByAdministrator(administrator.getId(), PageRequest.of(0, 1));
+        var secondPage = users.findLinkedByAdministrator(administrator.getId(), PageRequest.of(1, 1));
+        assertThat(firstPage.getTotalElements()).isEqualTo(2);
+        assertThat(firstPage.getContent().getFirst().userId()).isEqualTo(expected.getFirst());
+        assertThat(secondPage.getContent().getFirst().userId()).isEqualTo(expected.get(1));
+    }
+
     private AppUser user(String name) {
         var value = AppUser.builder().name(name).email("grouping" + (++sequence) + "@test.invalid")
                 .cpf("%011d".formatted(sequence)).permission(permission).active(true).build();

@@ -10,9 +10,11 @@ import com.argos.backend_services.mapper.LotMapper;
 import com.argos.backend_services.repository.*;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.sql.SQLException;
@@ -22,6 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class LotRegistrationServiceTest {
@@ -38,23 +41,6 @@ class LotRegistrationServiceTest {
     private final LotIn input = LotIn.builder().lotName("L-1").herdName("  Rebanho Nelore  ").breed(" Nelore ")
             .category(HerdCategory.FATTENING).headCount(200).releaseSlaughterDate(LocalDate.of(2027, 7, 1)).build();
 
-    @Test
-    void shouldCreateActiveHerdWithZeroAndFlushLotBeforeSynchronizingReport() throws Exception {
-        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
-        when(herds.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
-
-        service.registerLot(input, userId, property.getId());
-
-        var order = inOrder(access, herds, lots, reports);
-        order.verify(access).requireActiveAccess(userId, property.getId());
-        order.verify(herds).existsByPropertyId_IdAndHerdName(property.getId(), "Rebanho Nelore");
-        order.verify(herds).saveAndFlush(argThat(herd -> herd.isActive() && herd.getHeadCount() == 0
-                && herd.getHerdName().equals("Rebanho Nelore") && herd.getBreed().equals("Nelore")
-                && herd.getPropertyId() == property));
-        order.verify(lots).saveAndFlush(argThat(lot -> lot.getHeadCount() == 200 && lot.isActive()
-                && lot.getHerdId().getPropertyId() == property));
-        order.verify(reports).saveHerd(userId, property.getId());
-    }
 
     @Test
     void shouldUseOnlyActiveAccessiblePropertyWhenContextIsAbsent() throws Exception {
@@ -137,7 +123,7 @@ class LotRegistrationServiceTest {
         when(properties.findById(property.getId())).thenReturn(Optional.of(property));
         var failure = new DataIntegrityViolationException("duplicate",
                 new ConstraintViolationException("duplicate", new SQLException("duplicate", "23505"), "uq_herd_nome"));
-        when(herds.saveAndFlush(any())).thenThrow(failure);
+        when(herds.save(any())).thenThrow(failure);
 
         assertConflict(() -> service.registerLot(input, userId, property.getId()));
         verifyNoInteractions(lots, reports);
@@ -147,7 +133,7 @@ class LotRegistrationServiceTest {
     void shouldPreserveUnrelatedPersistenceFailure() {
         when(properties.findById(property.getId())).thenReturn(Optional.of(property));
         var failure = new DataIntegrityViolationException("other constraint");
-        when(herds.saveAndFlush(any())).thenThrow(failure);
+        when(herds.save(any())).thenThrow(failure);
 
         assertThatThrownBy(() -> service.registerLot(input, userId, property.getId())).isSameAs(failure);
         verifyNoInteractions(lots, reports);

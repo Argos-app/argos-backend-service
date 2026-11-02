@@ -11,15 +11,19 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.zip.ZipFile;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 class PackagedFirebaseRuntimeIT {
     @TempDir
     Path libraries;
 
     @Test
-    void shouldFetchFirebaseCertificatesUsingOnlyPackagedDependencies() throws Exception {
+    void shouldFitDeployLimitAndSupportFirebaseAuthAndMessagingUsingOnlyPackagedDependencies() throws Exception {
         Path packagedApplication = Path.of("target/app.jar");
         Assumptions.assumeTrue(Files.exists(packagedApplication),
                 "target/app.jar is generated only by the package phase");
+        assertTrue(Files.size(packagedApplication) < 100_000_000,
+                "app.jar must be smaller than the 100 MB deploy limit");
 
         var classpath = new ArrayList<URL>();
         classpath.add(Path.of("target/test-classes").toUri().toURL());

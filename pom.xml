@@ -156,6 +156,17 @@
       <groupId>com.google.api</groupId>
       <artifactId>gax</artifactId>
       <version>2.48.0</version>
+      <!-- Firebase Auth needs GAX paging, but Auth and Messaging do not use protobuf RPCs. -->
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.api.grpc</groupId>
+          <artifactId>proto-google-common-protos</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.springdoc</groupId>

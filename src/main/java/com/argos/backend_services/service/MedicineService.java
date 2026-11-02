@@ -48,9 +48,9 @@ public class MedicineService {
 
     @Transactional
     public MedicineCreatedOut registerBatch(MedicineBatchIn input, UUID userId, UUID requestedPropertyId) {
-        UUID propertyId = resolveProperty(userId, requestedPropertyId);
         var today = LocalDate.now(clock);
         validateDates(input, today);
+        UUID propertyId = resolveProperty(userId, requestedPropertyId);
 
         var medicine = medicineRepository.findByMapaRegistration(input.productRegistration().trim())
                 .filter(medicineCandidate -> medicineCandidate.isActive())

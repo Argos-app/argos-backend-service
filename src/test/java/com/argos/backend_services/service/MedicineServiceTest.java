@@ -50,8 +50,6 @@ class MedicineServiceTest {
     private MedicineMapper medicineMapper;
     private MedicineService service;
     private PropertyAccessService propertyAccessService;
-    private PropertyRepository propertyRepository;
-    private final UUID propertyId = UUID.randomUUID();
     private final Clock clock = Clock.fixed(Instant.parse("2026-10-11T12:00:00Z"), ZoneOffset.UTC);
 
     @BeforeEach
@@ -64,12 +62,8 @@ class MedicineServiceTest {
         databaseRoutineRepository = mock(DatabaseRoutineRepository.class);
         medicineMapper = mock(MedicineMapper.class);
         propertyAccessService = mock(PropertyAccessService.class);
-        propertyRepository = mock(PropertyRepository.class);
-        var property = com.argos.backend_services.entity.Property.builder().id(propertyId).active(true).build();
-        when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
-        when(propertyRepository.getReferenceById(propertyId)).thenReturn(property);
         service = new MedicineService(medicineRepository, medicineBatchRepository, supplierRepository,
-                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock, propertyAccessService, propertyRepository);
+                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock, propertyAccessService);
     }
 
     @Test
@@ -81,8 +75,8 @@ class MedicineServiceTest {
         var input = validInput();
 
         when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
-        when(medicineBatchRepository.existsByMedicineIdAndBatchNumberAndPropertyId_Id(
-                medicine, input.batchNumber(), propertyId)).thenReturn(false);
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(
+                medicine, input.batchNumber())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.empty());
         when(supplierRepository.save(any(Supplier.class))).thenReturn(supplier);
@@ -92,14 +86,13 @@ class MedicineServiceTest {
             return batch;
         });
 
-        var result = service.registerBatch(input, user.getId(), propertyId);
+        var result = service.registerBatch(input, user.getId());
 
         assertThat(result.medicineBatchId()).isEqualTo(batchId);
         assertThat(medicine.getSupplierId()).isEqualTo(supplier);
         var batchCaptor = ArgumentCaptor.forClass(MedicineBatch.class);
         verify(medicineBatchRepository).save(batchCaptor.capture());
         assertThat(batchCaptor.getValue().getMedicineId()).isEqualTo(medicine);
-        assertThat(batchCaptor.getValue().getPropertyId().getId()).isEqualTo(propertyId);
         assertThat(batchCaptor.getValue().getDeliveryDate()).isEqualTo(LocalDate.of(2026, 10, 11));
         verify(stockMovementRepository).save(argThat(movement ->
                 movement.getMedicineBatchId().getId().equals(batchId)
@@ -119,14 +112,14 @@ class MedicineServiceTest {
                 LocalDate.of(2027, 1, 10), new BigDecimal("20.000"), "Novo Fornecedor", "12345678000199");
 
         when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
-        when(medicineBatchRepository.existsByMedicineIdAndBatchNumberAndPropertyId_Id(medicine, input.batchNumber(), propertyId)).thenReturn(false);
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.empty());
         when(supplierRepository.save(any(Supplier.class))).thenReturn(supplier);
         when(medicineBatchRepository.save(any(MedicineBatch.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.registerBatch(input, user.getId(), propertyId);
+        service.registerBatch(input, user.getId());
 
         var supplierCaptor = ArgumentCaptor.forClass(Supplier.class);
         verify(supplierRepository).save(supplierCaptor.capture());
@@ -148,13 +141,13 @@ class MedicineServiceTest {
         var input = validInput();
 
         when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
-        when(medicineBatchRepository.existsByMedicineIdAndBatchNumberAndPropertyId_Id(medicine, input.batchNumber(), propertyId)).thenReturn(false);
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.of(existingSupplier));
         when(medicineBatchRepository.save(any(MedicineBatch.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.registerBatch(input, user.getId(), propertyId);
+        service.registerBatch(input, user.getId());
 
         verify(supplierRepository, never()).save(any());
         verify(medicineRepository).save(medicine);
@@ -177,9 +170,9 @@ class MedicineServiceTest {
 
         medicineMapper = Mappers.getMapper(MedicineMapper.class);
         service = new MedicineService(medicineRepository, medicineBatchRepository, supplierRepository,
-                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock, propertyAccessService, propertyRepository);
+                stockMovementRepository, userRepository, databaseRoutineRepository, medicineMapper, clock, propertyAccessService);
         when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
-        when(medicineBatchRepository.existsByMedicineIdAndBatchNumberAndPropertyId_Id(medicine, input.batchNumber(), propertyId)).thenReturn(false);
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(medicine, input.batchNumber())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.empty());
         when(supplierRepository.save(any(Supplier.class))).thenReturn(medicineSupplier);
@@ -191,11 +184,13 @@ class MedicineServiceTest {
         });
         when(databaseRoutineRepository.balanceMedicineBatch(batchId)).thenReturn(new BigDecimal("450.000"));
 
-        service.registerBatch(input, user.getId(), propertyId);
-        when(medicineBatchRepository.findAvailableInProperty(eq(propertyId), eq(MedicineBatch.Status.DISPONIVEL), eq(null), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(savedBatch[0])));
+        service.registerBatch(input, user.getId());
 
-        var listed = service.list(null, 0, 20, user.getId(), propertyId).data().getFirst();
+        var propertyId = UUID.randomUUID();
+        when(propertyAccessService.activePropertyIds(user.getId())).thenReturn(List.of(propertyId));
+        when(medicineBatchRepository.findAppliedInProperty(eq(propertyId), eq(MedicineBatch.Status.DISPONIVEL), eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(savedBatch[0])));
+        var listed = service.list(null, 0, 20, user.getId(), null).data().getFirst();
 
         assertThat(listed.medicineBatchId()).isEqualTo(batchId);
         assertThat(listed.supplier()).isEqualTo(input.supplierName());
@@ -209,7 +204,7 @@ class MedicineServiceTest {
         var input = new MedicineBatchIn("12345", "LOTE-1", LocalDate.of(2026, 1, 10),
                 LocalDate.of(2026, 10, 11), new BigDecimal("5.000"), "Fornecedor", "12345678000199");
 
-        assertThatThrownBy(() -> service.registerBatch(input, UUID.randomUUID(), propertyId))
+        assertThatThrownBy(() -> service.registerBatch(input, UUID.randomUUID()))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("validade deve ser futura");
 
@@ -225,13 +220,13 @@ class MedicineServiceTest {
         var input = validInput();
 
         when(medicineRepository.findByMapaRegistration(input.productRegistration())).thenReturn(Optional.of(medicine));
-        when(medicineBatchRepository.existsByMedicineIdAndBatchNumberAndPropertyId_Id(
-                medicine, input.batchNumber(), propertyId)).thenReturn(false);
+        when(medicineBatchRepository.existsByMedicineIdAndBatchNumber(
+                medicine, input.batchNumber())).thenReturn(false);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(supplierRepository.findByCnpj(input.supplierCnpj())).thenReturn(Optional.of(supplier));
         when(medicineBatchRepository.save(any(MedicineBatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.registerBatch(input, user.getId(), propertyId);
+        service.registerBatch(input, user.getId());
 
         verify(supplierRepository, never()).save(any());
         verify(medicineRepository).save(medicine);
@@ -272,28 +267,25 @@ class MedicineServiceTest {
     }
 
     @Test
-    void listRestrictsQueryToSelectedPropertyAndCategory() {
-        var userId = UUID.randomUUID();
-        var categoryId = UUID.randomUUID();
-        when(medicineBatchRepository.findAvailableInProperty(
+    void shouldRestrictMedicineListToAuthorizedProperty() {
+        UUID userId = UUID.randomUUID();
+        UUID propertyId = UUID.randomUUID();
+        UUID categoryId = UUID.randomUUID();
+        when(medicineBatchRepository.findAppliedInProperty(
                 eq(propertyId), eq(MedicineBatch.Status.DISPONIVEL), eq(categoryId), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
-
-        var result = service.list(categoryId, 0, 20, userId, propertyId);
-
-        assertThat(result.data()).isEmpty();
+        service.list(categoryId, 0, 20, userId, propertyId);
         verify(propertyAccessService).requireActiveAccess(userId, propertyId);
-        verify(medicineBatchRepository).findAvailableInProperty(
+        verify(medicineBatchRepository).findAppliedInProperty(
                 eq(propertyId), eq(MedicineBatch.Status.DISPONIVEL), eq(categoryId), any(Pageable.class));
-        verify(databaseRoutineRepository, never()).balanceMedicineBatch(any());
     }
 
     @Test
-    void listRejectsUnassociatedPropertyBeforeQuery() {
-        var userId = UUID.randomUUID();
+    void shouldBlockUnauthorizedMedicineList() {
+        UUID userId = UUID.randomUUID();
+        UUID propertyId = UUID.randomUUID();
         doThrow(new org.springframework.security.access.AccessDeniedException("Sem acesso"))
                 .when(propertyAccessService).requireActiveAccess(userId, propertyId);
-
         assertThatThrownBy(() -> service.list(null, 0, 20, userId, propertyId))
                 .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
         verifyNoInteractions(medicineBatchRepository);

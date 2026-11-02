@@ -94,20 +94,25 @@ public class MedicineService {
     }
 
     @Transactional(readOnly = true)
-    public PageOut<MedicineListItemOut> list(UUID therapeuticCategoryId, int page, int size, UUID userId) {
+    public PageOut<MedicineListItemOut> list(UUID therapeuticCategoryId, int page, int size, UUID userId, UUID propertyId) {
         var pageable = PageableUtils.createPageRequest(page, size,
                 Sort.by(Sort.Order.asc("expiryDate"), Sort.Order.asc("medicineId.brandName"),
                         Sort.Order.asc("batchNumber")));
 
-        var propertyIds = propertyAccessService.activePropertyIds(userId);
-        if (propertyIds.isEmpty()) {
-            return new PageOut<>(java.util.List.of(), page, size, 0L, 0, true, true);
+        UUID selectedPropertyId = propertyId;
+        if (selectedPropertyId == null) {
+            var propertyIds = propertyAccessService.activePropertyIds(userId);
+            if (propertyIds.isEmpty()) {
+                throw new org.springframework.security.access.AccessDeniedException("Usuário sem propriedade ativa");
+            }
+            if (propertyIds.size() != 1) {
+                throw new BadRequestException("Informe propertyId para selecionar a propriedade");
+            }
+            selectedPropertyId = propertyIds.getFirst();
         }
-        if (propertyIds.size() > 1) {
-            throw new BadRequestException("É necessário selecionar uma propriedade para consultar os medicamentos");
-        }
+        propertyAccessService.requireActiveAccess(userId, selectedPropertyId);
         var result = medicineBatchRepository.findAppliedInProperty(
-                propertyIds.getFirst(), MedicineBatch.Status.DISPONIVEL, therapeuticCategoryId, pageable);
+                selectedPropertyId, MedicineBatch.Status.DISPONIVEL, therapeuticCategoryId, pageable);
         var data = result.getContent().stream()
                 .map(batch -> medicineMapper.toListItemOut(
                         batch,

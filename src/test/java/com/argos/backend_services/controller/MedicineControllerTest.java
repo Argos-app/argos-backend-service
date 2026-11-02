@@ -99,7 +99,7 @@ class MedicineControllerTest {
                 java.time.LocalDate.of(2026, 1, 10), java.time.LocalDate.of(2028, 1, 10),
                 java.math.BigDecimal.valueOf(12.5), java.math.BigDecimal.valueOf(1.5), "ml", 28,
                 "LOTE-2026-001", "Ivermectina", "Antiparasitário");
-        when(medicineService.list(null, 0, 20, USER_ID, null))
+        when(medicineService.list(null, 0, 20, USER_ID))
                 .thenReturn(new PageOut<>(List.of(item), 0, 20, 1, 1, true, true));
 
         mockMvc.perform(get("/medicines").with(authentication(userAuthentication())))

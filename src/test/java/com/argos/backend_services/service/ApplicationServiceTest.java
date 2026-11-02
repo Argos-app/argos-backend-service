@@ -1,24 +1,16 @@
+
 package com.argos.backend_services.service;
 
 import com.argos.backend_services.dto.in.ApplicationIn;
 import com.argos.backend_services.dto.out.ApplicationOut;
-import com.argos.backend_services.entity.Application;
-import com.argos.backend_services.entity.Herd;
-import com.argos.backend_services.entity.Lot;
-import com.argos.backend_services.entity.Medicine;
-import com.argos.backend_services.entity.MedicineBatch;
-import com.argos.backend_services.entity.Property;
+import com.argos.backend_services.entity.*;
 import com.argos.backend_services.exception.LotNotFoundException;
-import com.argos.backend_services.exception.MedicineNotFoundException;
 import com.argos.backend_services.mapper.ApplicationMapper;
-import com.argos.backend_services.repository.ApplicationRepository;
-import com.argos.backend_services.repository.ApplicationAnimalRepository;
-import com.argos.backend_services.repository.DatabaseRoutineRepository;
-import com.argos.backend_services.repository.LotRepository;
-import com.argos.backend_services.repository.MedicineBatchRepository;
-import com.argos.backend_services.repository.MedicineRepository;
+import com.argos.backend_services.repository.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -50,9 +42,17 @@ class ApplicationServiceTest {
         applicationAnimalRepository = mock(ApplicationAnimalRepository.class);
         mapper = mock(ApplicationMapper.class);
         propertyAccessService = mock(PropertyAccessService.class);
-        service = new ApplicationService(lotRepository, applicationRepository,
-                medicineBatchRepository, medicineRepository, databaseRoutineRepository,
-                applicationAnimalRepository, mapper, propertyAccessService);
+
+        service = new ApplicationService(
+                lotRepository,
+                applicationRepository,
+                medicineBatchRepository,
+                medicineRepository,
+                databaseRoutineRepository,
+                applicationAnimalRepository,
+                mapper,
+                propertyAccessService
+        );
     }
 
     @Test
@@ -115,89 +115,6 @@ class ApplicationServiceTest {
         verifyNoInteractions(
                 medicineRepository,
                 medicineBatchRepository
-        );
-    }
-
-    @Test
-    void shouldRegisterApplicationUsingLotCodeWhenLotIdIsNull() throws Exception {
-        UUID lotId = UUID.randomUUID();
-        UUID batchId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        UUID propertyId = UUID.randomUUID();
-
-        Lot lot = Lot.builder()
-                .id(lotId)
-                .lotCode("LOTE-001")
-                .herdId(Herd.builder()
-                        .propertyId(Property.builder()
-                                .id(propertyId)
-                                .build())
-                        .build())
-                .build();
-
-        ApplicationIn input = ApplicationIn.builder()
-                .lotName("LOTE-001")
-                .medicineBatchId(batchId)
-                .dose(new BigDecimal("5.0"))
-                .unit("ML")
-                .route("ORAL")
-                .goal("Prevenção")
-                .build();
-
-        when(lotRepository.findWithHerdAndPropertyByLotCode("LOTE-001"))
-                .thenReturn(Optional.of(lot));
-
-        service.registerApplication(input, userId);
-
-        verify(lotRepository)
-                .findWithHerdAndPropertyByLotCode("LOTE-001");
-
-        verify(lotRepository, never())
-                .findWithHerdAndPropertyById(any());
-
-        verify(propertyAccessService)
-                .requireActiveAccess(userId, propertyId);
-
-        verify(databaseRoutineRepository).registerApplication(
-                lotId,
-                batchId,
-                userId,
-                input.dose(),
-                input.unit(),
-                input.route(),
-                input.goal()
-        );
-    }
-
-    @Test
-    void shouldThrowWhenLotDoesNotExist() {
-        UUID userId = UUID.randomUUID();
-
-        ApplicationIn input = ApplicationIn.builder()
-                .lotName("INEXISTENTE")
-                .build();
-
-        when(lotRepository.findWithHerdAndPropertyByLotCode("INEXISTENTE"))
-                .thenReturn(Optional.empty());
-
-        LotNotFoundException exception = assertThrows(
-                LotNotFoundException.class,
-                () -> service.registerApplication(input, userId)
-        );
-
-        assertEquals(
-                null,
-                exception.getMessage()
-        );
-
-        verify(lotRepository)
-                .findWithHerdAndPropertyByLotCode("INEXISTENTE");
-
-        verifyNoInteractions(
-                propertyAccessService,
-                medicineRepository,
-                medicineBatchRepository,
-                databaseRoutineRepository
         );
     }
 

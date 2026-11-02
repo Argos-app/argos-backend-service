@@ -255,13 +255,6 @@ begin
                'EXCECAO'
            );
 
-
-    commit;
-
-EXCEPTION
-    when OTHERS then
-        rollback;
-        raise;
 end;
 $$ language plpgsql;
 

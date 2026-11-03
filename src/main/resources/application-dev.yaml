@@ -12,7 +12,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     url: ${DATASOURCE_URL}
     username: ${DATASOURCE_USER}
-    password: "postgresArgos01!"
+    password: ${DATASOURCE_PASSWORD}
     hikari:
       data-source-properties:
         logServerErrorDetail: false

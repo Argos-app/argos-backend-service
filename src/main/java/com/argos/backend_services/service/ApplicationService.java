@@ -27,23 +27,15 @@ public class ApplicationService {
 
     public void registerApplication(ApplicationIn applicationIn, UUID userId) throws LotNotFoundException, MedicineNotFoundException {
 
-        var lot = (applicationIn.lotId() != null
-                ? lotRepository.findWithHerdAndPropertyById(applicationIn.lotId())
-                : lotRepository.findWithHerdAndPropertyByLotCode(applicationIn.lotName()))
+        var lot = lotRepository.findWithHerdAndPropertyById(applicationIn.lotId())
                 .orElseThrow(() -> new LotNotFoundException("Não foi possível achar o lote informado"));
 
         var propertyId = lot.getHerdId().getPropertyId().getId();
         propertyAccessService.requireActiveAccess(userId, propertyId);
 
-        var medicine = medicineRepository.findByBrandName(applicationIn.medicineName())
-                .orElseThrow(() -> new MedicineNotFoundException("Could not found medicine by name"));
-
-        var medicineBatch = medicineBatchRepository.findByMedicineId(medicine)
-                .orElseThrow(() -> new MedicineNotFoundException("Could not found medicine batch by medicine id"));
-
         databaseRoutineRepository.registerApplication
                 (lot.getId(),
-                medicineBatch.getId(),
+                applicationIn.medicineBatchId(),
                 userId,
                 applicationIn.dose(),
                 applicationIn.unit(),

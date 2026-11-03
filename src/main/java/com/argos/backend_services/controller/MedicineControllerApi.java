@@ -32,7 +32,7 @@ public interface MedicineControllerApi {
 
     @PostMapping
     @Operation(summary = "Registra a entrada de um lote de medicamento",
-            description = "Localiza o medicamento pelo registro MAPA, cria o fornecedor por CNPJ quando necessário e registra a entrada inicial no estoque global, com auditoria do usuário autenticado.")
+            description = "Localiza o medicamento pelo registro MAPA, reutiliza o fornecedor por CNPJ ou o cria quando necessário, associa-o ao medicamento e registra a entrada inicial no estoque global, com auditoria do usuário autenticado.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Lote de medicamento registrado",
                     content = @Content(schema = @Schema(implementation = MedicineCreatedOut.class))),
@@ -47,7 +47,7 @@ public interface MedicineControllerApi {
 
     @GetMapping
     @Operation(summary = "Lista os lotes de medicamentos disponíveis",
-            description = "Retorna nome, fornecedor, fabricação, validade, dose, saldo, carência, lote, princípio ativo e categoria terapêutica. O filtro de categoria é opcional.")
+            description = "Retorna nome, fornecedor associado ao medicamento, fabricação, validade, dose e unidade, saldo, carência, lote, princípio ativo e categoria terapêutica. A listagem considera as propriedades ativas vinculadas ao usuário autenticado. O filtro de categoria é opcional.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Página de medicamentos disponíveis",
                     content = @Content(schema = @Schema(implementation = PageOut.class))),

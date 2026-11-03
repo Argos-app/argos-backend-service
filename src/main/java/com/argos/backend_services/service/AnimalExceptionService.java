@@ -33,6 +33,7 @@ public class AnimalExceptionService {
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final AnimalExceptionMapper mapper;
 
+    @Transactional
     public void register(AnimalExceptionIn input, UUID userId) throws LotNotFoundException {
         var originLot = lotRepository.findWithHerdAndPropertyById(input.originLotId())
                 .orElseThrow(() -> new LotNotFoundException("Lote de origem não encontrado: " + input.originLotId()));

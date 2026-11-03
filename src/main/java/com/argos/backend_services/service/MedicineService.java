@@ -20,15 +20,12 @@ import com.argos.backend_services.repository.SupplierRepository;
 import com.argos.backend_services.repository.UserRepository;
 import com.argos.backend_services.utils.PageableUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -43,6 +40,7 @@ public class MedicineService {
     private final DatabaseRoutineRepository databaseRoutineRepository;
     private final MedicineMapper medicineMapper;
     private final Clock clock;
+    private final PropertyAccessService propertyAccessService;
 
     @Transactional
     public MedicineCreatedOut registerBatch(MedicineBatchIn input, UUID userId) {
@@ -61,6 +59,15 @@ public class MedicineService {
         var user = userRepository.findById(userId)
                 .filter(userCandidate -> Boolean.TRUE.equals(userCandidate.getActive()))
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado ou inativo"));
+
+        var supplier = supplierRepository.findByCnpj(input.supplierCnpj().trim())
+                .orElseGet(() -> supplierRepository.save(Supplier.builder()
+                        .companyName(input.supplierName().trim())
+                        .cnpj(input.supplierCnpj().trim())
+                        .active(true)
+                        .build()));
+        medicine.setSupplierId(supplier);
+        medicineRepository.save(medicine);
 
         var batch = medicineBatchRepository.save(MedicineBatch.builder()
                 .medicineId(medicine)
@@ -89,8 +96,15 @@ public class MedicineService {
                 Sort.by(Sort.Order.asc("expiryDate"), Sort.Order.asc("medicineId.brandName"),
                         Sort.Order.asc("batchNumber")));
 
-        var result = filterByTherapeuticCategory(
-                therapeuticCategoryId, pageable);
+        // O escopo vem exclusivamente das propriedades ativas vinculadas ao usuário autenticado.
+        var propertyIds = propertyAccessService.activePropertyIds(userId);
+        if (propertyIds.isEmpty()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Usuário não possui acesso a nenhuma propriedade ativa");
+        }
+
+        var result = medicineBatchRepository.findAppliedInProperties(
+                propertyIds, MedicineBatch.Status.DISPONIVEL, therapeuticCategoryId, pageable);
         var data = result.getContent().stream()
                 .map(batch -> medicineMapper.toListItemOut(
                         batch,
@@ -124,30 +138,6 @@ public class MedicineService {
                 result.isLast());
     }
 
-    private void findOrCreateSupplier(MedicineBatchIn input) {
-        var cnpj = input.supplierCnpj().trim();
-        if (supplierRepository.findByCnpj(cnpj).isPresent()) {
-            var supplier = supplierRepository.save(Supplier.builder()
-                    .companyName(input.supplierName().trim())
-                    .cnpj(cnpj)
-                    .active(true)
-                    .build());
-
-            var medicine = medicineRepository.findByMapaRegistration(input.productRegistration());
-            medicineRepository.save(Medicine
-                    .builder()
-                    .createdAt(medicine.get().getCreatedAt())
-                    .needsPrescription(medicine.get().isNeedsPrescription())
-                    .id(medicine.get().getId())
-                    .supplierId(supplier)
-                    .activeIngredient(medicine.get().getActiveIngredient())
-                    .description(medicine.get().getDescription())
-                    .dose(medicine.get().getDose())
-                    .active(true)
-                    .build());
-        }
-    }
-
     private void validateDates(MedicineBatchIn input, LocalDate today) {
         if (!input.expiryDate().isAfter(input.manufactureDate())) {
             throw new BadRequestException("A data de validade deve ser posterior à data de fabricação");
@@ -157,12 +147,4 @@ public class MedicineService {
         }
     }
 
-    private Page<MedicineBatch> filterByTherapeuticCategory(
-            UUID therapeuticCategoryId, Pageable pageable) {
-
-        return therapeuticCategoryId == null
-                ? medicineBatchRepository.findByStatus(MedicineBatch.Status.DISPONIVEL, pageable)
-                : medicineBatchRepository.findByStatusAndMedicineId_TherapeuticCategoryId(
-                MedicineBatch.Status.DISPONIVEL, therapeuticCategoryId, pageable);
-    }
 }

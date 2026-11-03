@@ -10,6 +10,8 @@ import com.argos.backend_services.service.AuthService;
 import com.argos.backend_services.service.JwtService;
 import com.argos.backend_services.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,11 +25,13 @@ import org.springframework.test.context.ActiveProfiles;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.RequestDispatcher;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.mockito.Mockito.mock;
 
 @SpringBootTest(classes = SignInHttpSecurityTest.TestConfig.class)
@@ -69,6 +73,47 @@ class SignInHttpSecurityTest {
         mvc.perform(request(HttpMethod.GET, "/api/v1/auth/first-access")
                 .contextPath("/api/v1").servletPath("/auth/first-access"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "https://argos-frontend-service-hml.vercel.app",
+            "https://argos-frontend-service.vercel.app"
+    })
+    void shouldAllowFrontendPreflightWithAuthorizationAndContentType(String origin) throws Exception {
+        mvc.perform(request(HttpMethod.OPTIONS, "/api/v1/auth/first-access")
+                .contextPath("/api/v1").servletPath("/auth/first-access")
+                .header(HttpHeaders.ORIGIN, origin)
+                .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "Authorization,Content-Type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "Authorization, Content-Type"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "https://argos-frontend-service-hml.vercel.app",
+            "https://argos-frontend-service.vercel.app"
+    })
+    void shouldReturnCorsHeadersWithoutBypassingAuthentication(String origin) throws Exception {
+        mvc.perform(request(HttpMethod.GET, "/api/v1/auth/first-access")
+                .contextPath("/api/v1").servletPath("/auth/first-access")
+                .header(HttpHeaders.ORIGIN, origin))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
+    }
+
+    @Test
+    void shouldRejectPreflightFromUnlistedOrigin() throws Exception {
+        mvc.perform(request(HttpMethod.OPTIONS, "/api/v1/auth/first-access")
+                .contextPath("/api/v1").servletPath("/auth/first-access")
+                .header(HttpHeaders.ORIGIN, "https://argos-frontend-service.vercel.app.example.com")
+                .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST"))
+                .andExpect(status().isForbidden())
+                .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
     @Configuration

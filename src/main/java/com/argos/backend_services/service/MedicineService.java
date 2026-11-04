@@ -84,7 +84,7 @@ public class MedicineService {
                 .userId(user)
                 .type('E')
                 .quantity(input.quantity())
-                .reason("ENTRADA_LOTE")
+                .reason("COMPRA")
                 .build());
 
         return new MedicineCreatedOut(batch.getId());

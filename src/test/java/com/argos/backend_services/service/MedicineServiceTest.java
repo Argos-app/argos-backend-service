@@ -99,7 +99,7 @@ class MedicineServiceTest {
                         && movement.getUserId().equals(user)
                         && movement.getType() == 'E'
                         && movement.getQuantity().compareTo(input.quantity()) == 0
-                        && "ENTRADA_LOTE".equals(movement.getReason())));
+                        && "COMPRA".equals(movement.getReason())));
     }
 
     @Test
@@ -231,7 +231,13 @@ class MedicineServiceTest {
         verify(supplierRepository, never()).save(any());
         verify(medicineRepository).save(medicine);
         assertThat(medicine.getSupplierId()).isEqualTo(supplier);
-        verify(stockMovementRepository).save(any());
+        verify(stockMovementRepository).save(argThat(movement ->
+                movement.getMedicineBatchId() != null
+                        && movement.getMedicineBatchId().getMedicineId().equals(medicine)
+                        && movement.getUserId().equals(user)
+                        && movement.getType() == 'E'
+                        && movement.getQuantity().compareTo(input.quantity()) == 0
+                        && "COMPRA".equals(movement.getReason())));
     }
 
     @Test

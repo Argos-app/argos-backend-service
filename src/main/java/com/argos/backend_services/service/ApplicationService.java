@@ -8,6 +8,7 @@ import com.argos.backend_services.mapper.ApplicationMapper;
 import com.argos.backend_services.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +26,7 @@ public class ApplicationService {
     private final ApplicationMapper mapper;
     private final PropertyAccessService propertyAccessService;
 
+    @Transactional
     public void registerApplication(ApplicationIn applicationIn, UUID userId) throws LotNotFoundException, MedicineNotFoundException {
 
         var lot = lotRepository.findWithHerdAndPropertyById(applicationIn.lotId())

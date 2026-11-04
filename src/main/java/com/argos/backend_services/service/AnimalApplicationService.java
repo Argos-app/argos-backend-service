@@ -10,6 +10,7 @@ import com.argos.backend_services.repository.DatabaseRoutineRepository;
 import com.argos.backend_services.repository.MedicineBatchRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -25,6 +26,7 @@ public class AnimalApplicationService {
     private final PropertyAccessService propertyAccessService;
     private final DatabaseRoutineRepository databaseRoutineRepository;
 
+    @Transactional
     public void register(UUID animalExceptionId, AnimalApplicationIn input, UUID userId)
             throws MedicineNotFoundException {
         var animalException = animalExceptionRepository.findWithLotsById(animalExceptionId)
